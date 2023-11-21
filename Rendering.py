@@ -21,8 +21,8 @@ def vetor_deslocamento(x, y, k, m, b, u):
 
 
 def raycast(lista_objetos):
-    camera = np.array([3, 0, 0])
-    alvo = np.array([1, 0, 0])
+    camera = np.array([-1, 0, 0])
+    alvo = np.array([1.5, 0, 0])
     vetor_up = np.array([0, 1, 0])
 
     distancia = 1
@@ -57,8 +57,8 @@ def raycast(lista_objetos):
 
 
 def starfield_projection(photons):
-    camera = np.array([3, 0, 0])
-    alvo = np.array([1, 0, 0])
+    camera = np.array([-1, 0, 0])
+    alvo = np.array([1.5, 0, 0])
     vetor_up = np.array([0, 1, 0])
 
     distancia = 1
@@ -76,16 +76,16 @@ def starfield_projection(photons):
     desl_l, desl_v = vetor_deslocamento(tamx, tamy, hres, vres, b, up)
     vet_incial = oa * distancia - tamx * b - tamy * up
 
-    intersecta_i, t_i, p_i, n, rr, ir = intersecao_pl(["pl", np.array(camera - alvo), np.array(alvo), [0, 0, 0], 0], camera, vet_incial)
+    intersecta_i, t_i, p_i, n, rr, ir = intersecao_pl(["pl", np.array(oa) * distancia + camera, np.array(camera - alvo), [0, 0, 0], 0], camera, vet_incial)
 
     for photon in photons:
 
         vetor_proj = camera - photon
         testar_direcao = np.dot(vetor_proj, oa)
 
-        intersecta, t, p, n, rr, ir = intersecao_pl(["pl", np.array(camera - alvo), np.array(alvo), [0, 0, 0], 0], photon, vetor_proj)
+        intersecta, t, p, n, rr, ir = intersecao_pl(["pl",  np.array(oa) * distancia + camera, np.array(camera - alvo), [0, 0, 0], 0], photon, vetor_proj)
 
-        if intersecta is True and testar_direcao < 1:
+        if intersecta is True and testar_direcao < 0:
 
             vetor = p - p_i
 
@@ -105,6 +105,8 @@ def starfield_projection(photons):
 
             posicao_grid_y = round(num_des_l)
             posicao_grid_x = round(num_des_v)
+
+            # print(posicao_grid_x, posicao_grid_y)
 
             if 0 <= posicao_grid_x <= hres - 1 and 0 <= posicao_grid_y <= vres - 1:
                 grid[posicao_grid_x, posicao_grid_y] = [255, 255, 255]
