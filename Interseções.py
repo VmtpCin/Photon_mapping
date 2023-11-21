@@ -37,7 +37,7 @@ def intersecao_esf(esfera, og, vetor_diretor):
     a = np.dot(vetor_diretor, vetor_diretor)
     b = 2 * np.dot(oc, vetor_diretor)
     c = np.dot(oc, oc) - (esfera[2] ** 2)
-    delta = b ** 2 - (4 * a * c)
+    delta = (b ** 2) - (4 * a * c)
 
     if delta < 0:
         return False, -1, [0, 0, 0], [0, 0, 0], [0, 0, 0], 0
