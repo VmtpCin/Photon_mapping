@@ -34,8 +34,8 @@ def raycast(lista_objetos):
     grid = np.zeros((vres, hres, 3), dtype=np.uint8)
 
     oa = normalize(alvo - camera)
-    b = normalize(np.cross(oa, vetor_up))
-    up = normalize(-1 * np.cross(b, oa))
+    b = normalize(np.cross(vetor_up, oa))
+    up = normalize(-1 * np.cross(oa, b))
 
     desl_l, desl_v = vetor_deslocamento(tamx, tamy, hres, vres, b, up)
     vet_incial = oa * distancia - tamx * b - tamy * up
@@ -70,32 +70,33 @@ def starfield_projection(photons):
     grid = np.zeros((vres, hres, 3), dtype=np.uint8)
 
     oa = normalize(alvo - camera)
-    b = normalize(np.cross(oa, vetor_up))
-    up = normalize(-1 * np.cross(b, oa))
+    b = normalize(np.cross(vetor_up, oa))
+    up = normalize(-1 * np.cross(oa, b))
 
     desl_l, desl_v = vetor_deslocamento(tamx, tamy, hres, vres, b, up)
     vet_incial = oa * distancia - tamx * b - tamy * up
 
-    intersecta_i, t_i, p_i, n, rr = intersecao_pl(["pl", np.array(alvo), np.array(camera - alvo), [0, 0, 0]], camera, vet_incial)
+    intersecta_i, t_i, p_i, n, rr, ir = intersecao_pl(["pl", np.array(camera - alvo), np.array(alvo), [0, 0, 0], 0], camera, vet_incial)
 
     for photon in photons:
 
         vetor_proj = camera - photon
+        testar_direcao = np.dot(vetor_proj, oa)
 
-        intersecta, t, p, n, rr = intersecao_pl(["pl", np.array(alvo), np.array(camera - alvo), [0, 0, 0]], photon, vetor_proj)
+        intersecta, t, p, n, rr, ir = intersecao_pl(["pl", np.array(camera - alvo), np.array(alvo), [0, 0, 0], 0], photon, vetor_proj)
 
-        if intersecta is True:
+        if intersecta is True and testar_direcao < 1:
 
             vetor = p - p_i
 
-            v_desl_l = np.divide(vetor, desl_l, out=np.zeros_like(vetor), where=desl_l!=0)
+            v_desl_l = np.divide(vetor, desl_l, out=np.zeros_like(vetor), where=desl_l != 0)
 
             if min(v_desl_l) == 0:
                 num_des_l = max(v_desl_l)
             else:
                 num_des_l = min(v_desl_l)
 
-            v_desl_v = np.divide(vetor, desl_v, out=np.zeros_like(vetor), where=desl_v!=0)
+            v_desl_v = np.divide(vetor, desl_v, out=np.zeros_like(vetor), where=desl_v != 0)
 
             if min(v_desl_v) == 0:
                 num_des_v = max(v_desl_v)
@@ -105,7 +106,7 @@ def starfield_projection(photons):
             posicao_grid_y = round(num_des_l)
             posicao_grid_x = round(num_des_v)
 
-            if posicao_grid_x <= hres and posicao_grid_y <= vres:
+            if 0 <= posicao_grid_x <= hres - 1 and 0 <= posicao_grid_y <= vres - 1:
                 grid[posicao_grid_x, posicao_grid_y] = [255, 255, 255]
 
     cv.imshow('i', grid)

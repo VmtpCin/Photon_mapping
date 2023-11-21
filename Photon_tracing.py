@@ -1,40 +1,50 @@
-from numpy import cross
+import numpy as np
 from Interseções import *
-from numpy.linalg import norm
 from math import sqrt, inf, sin, cos, acos, pi
 from random import uniform
 
 
-def russian_roulette(ponto, direcao, up,  min, max, lista_objetos, lista_photons):
+def russian_roulette(ponto, direcao, up, ir1, min, max, lista_objetos, lista_photons):
 
-    inter, p, n, rr = intersecao(ponto, direcao, min, max, lista_objetos)
+    inter, p, n, rr, ir2 = intersecao(ponto, direcao, min, max, lista_objetos)
     n = np.array(n)
     if inter:
         dice = uniform(0, 1)
-        if dice < rr[0]:
+        if dice < rr[0]:  # difusão
 
             # gerando valores aleatorios entre 0 e 1
             sigma1 = uniform(0, 1)
             sigma2 = uniform(0, 1)
-            a = cross(n, n)
+
             # Gerar base ortonormal no local do ponto
+            w = np.cross(n, up)
+            v = np.cross(w, up)
+            v = norm(v)
+            u = np.cross(v, w)
 
-
-
-            teta = 1/(cos(sqrt(sigma1)))  # angulo com a normal
+            # Gerar o sample point
+            teta = 1 / (cos(sqrt(sigma1)))  # angulo com a normal
             phi = 2 * pi * sigma2  # rotação ao redor da normal
+            sp = (sin(teta) * cos(phi) * u) + sin(teta) * sin(phi) * v + cos(teta) * w
+            novo_diretor = (sp[0] * u) + (sp[1] * v) + (sp[2] * w)
 
-            # difusão
+            # Testa photon refletido
+            russian_roulette(p, novo_diretor, up, ir1, 0.001, inf, lista_objetos, lista_photons)
 
-        elif dice < rr[0] + rr[1]:
-                a = 2
-                # reflexão
+        elif dice < rr[0] + rr[1]:  # reflexão
+            novo_diretor = 2 * n * np.dot(n, -1 * direcao) - (-1 * direcao)
+            russian_roulette(p, novo_diretor, up, ir1, 0.001, inf, lista_objetos, lista_photons)
 
-        elif dice < rr[0] + rr[1] + rr[2]:
-            a = 2
-            #refrata
+        elif dice < rr[0] + rr[1] + rr[2]:  # refração
+            if ir1 == ir2:
+                ir2 = 1
+            snell = ir2/ir1
+            cos_externo = np.dot(n, direcao)
+            cos_interno = sqrt(1 - ((1/snell**2) * (1 - cos_externo**2)))
+            novo_diretor = ((1/snell) * (direcao)) - (cos_interno - (((1/snell) * cos_externo) * n))
+            russian_roulette(p, novo_diretor, up, ir2, 0.001, inf, lista_objetos, lista_photons)
 
-        else:
+        else:  # absorção
             lista_photons.append(p)
 
 
@@ -51,7 +61,7 @@ def emitir_photons(ponto, num_photons, up, lista_photons, lista_objetos):
                 break
 
         direcao = np.array([x, y, z])
-        russian_roulette(np.array(ponto), direcao, np.array(up), 0.001, inf, lista_objetos, lista_photons)  #intersecao(np.array(ponto), direcao, 0.001, inf, lista_objetos)
+        russian_roulette(np.array(ponto), direcao, np.array(up), 1, 0.001, inf, lista_objetos, lista_photons)  #intersecao(np.array(ponto), direcao, 0.001, inf, lista_objetos)
 
         # if any(p):
         #     lista_photons.append(p)
