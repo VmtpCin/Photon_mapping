@@ -45,6 +45,18 @@ def intersecao_esf(esfera, og, vetor_diretor):
     it1 = (-b + sqrt(delta)) / (2 * a)
     it2 = (-b - sqrt(delta)) / (2 * a)
 
+
+    if it1 < 0.01:
+        it1 = inf
+    if it2 < 0.01:
+        it2 = inf
+
+    if it1 < 0 and it2 < 0:
+        return False, -1, [0, 0, 0], [0, 0, 0], [0, 0, 0], 0
+
+    if it1 == inf and it2 == inf:
+        return False, -1, [0, 0, 0], [0, 0, 0], [0, 0, 0], 0
+
     if it1 < it2:
         menor_t = it1
     else:
@@ -59,11 +71,8 @@ def intersecao_esf(esfera, og, vetor_diretor):
     rr = np.array(esfera[3])
     ir = esfera[4]
 
-    if it1 < 0 and it2 < 0:
-        return False, -1, [0, 0, 0], [0, 0, 0], [0, 0, 0], 0
 
-    else:
-        return True, menor_t, ponto, normal, rr, ir
+    return True, menor_t, ponto, normal, rr, ir
 
 
 def intersecao_pl(plano, og, vetor_diretor):
@@ -186,6 +195,7 @@ def intersecao(ponto, vetor_diretor, min, max, lista_objetos):
     p = [0, 0, 0]
     normal = [0, 0, 0]
     rr = [0, 0, 0]
+    tipo = ""
 
     for obj in lista_objetos:
 
@@ -199,6 +209,7 @@ def intersecao(ponto, vetor_diretor, min, max, lista_objetos):
                 normal = normal_temp
                 ir2 = ir_temp
                 rr = rr_temp
+                tipo = "esf"
                 inters = True
 
         elif tipo_obj == "pl":
@@ -209,6 +220,7 @@ def intersecao(ponto, vetor_diretor, min, max, lista_objetos):
                 ir2 = ir_temp
                 normal = normal_temp
                 rr = rr_temp
+                tipo = "plano"
                 inters = True
 
         else:
@@ -218,8 +230,9 @@ def intersecao(ponto, vetor_diretor, min, max, lista_objetos):
                 p = ponto_temp
                 ir2 = ir_temp
                 normal = normal_temp
+                tipo = "tri"
                 rr = rr_temp
                 inters = True
 
-    return inters, p, normal, rr, ir2
+    return inters, p, normal, rr, ir2, tipo
 

@@ -22,7 +22,7 @@ def vetor_deslocamento(x, y, k, m, b, u):
 
 def raycast(lista_objetos):
     camera = np.array([-1, 0, 0])
-    alvo = np.array([1.5, 0, 0])
+    alvo = np.array([1, 0, 0])
     vetor_up = np.array([0, 1, 0])
 
     distancia = 1
@@ -58,7 +58,7 @@ def raycast(lista_objetos):
 
 def starfield_projection(photons):
     camera = np.array([-1, 0, 0])
-    alvo = np.array([1.5, 0, 0])
+    alvo = np.array([1, 0, 0])
     vetor_up = np.array([0, 1, 0])
 
     distancia = 1
@@ -80,10 +80,11 @@ def starfield_projection(photons):
 
     for photon in photons:
 
-        vetor_proj = camera - photon
+        vetor_proj = camera - photon[0]
         testar_direcao = np.dot(vetor_proj, oa)
+        tipo = photon[1]
 
-        intersecta, t, p, n, rr, ir = intersecao_pl(["pl",  np.array(oa) * distancia + camera, np.array(camera - alvo), [0, 0, 0], 0], photon, vetor_proj)
+        intersecta, t, p, n, rr, ir = intersecao_pl(["pl",  np.array(oa) * distancia + camera, np.array(camera - alvo), [0, 0, 0], 0], photon[0], vetor_proj)
 
         if intersecta is True and testar_direcao < 0:
 
@@ -109,7 +110,7 @@ def starfield_projection(photons):
             # print(posicao_grid_x, posicao_grid_y)
 
             if 0 <= posicao_grid_x <= hres - 1 and 0 <= posicao_grid_y <= vres - 1:
-                grid[posicao_grid_x, posicao_grid_y] = [255, 255, 255]
+                grid[posicao_grid_x, posicao_grid_y] = photon[1]
 
     cv.imshow('i', grid)
     cv.waitKey(0)
