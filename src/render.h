@@ -56,11 +56,11 @@ struct Camera {
 
     Camera(const Point3 &o, const Point3 &t, const Vec3 &u, int hr,
            int vr, double tx, double ty, double dist = 1) : origin(o),
-           up(u), hres(hr), vres(vr), tamx(tx), tamy(ty) {
+           hres(hr), vres(vr), tamx(tx), tamy(ty) {
 
-            oa = ( t - o ).normalize();
-        Vec3 b = (up ^ oa).normalize();
-            up = ( b ^ oa).normalize();
+            oa = (t - o ).normalize();
+        Vec3 b = (u ^ oa).normalize();
+            up = (b ^ oa).normalize();
 
 
         desl_h = ((2 * tamx) / (hres - 1)) * b;

@@ -13,7 +13,7 @@ void russian_rolette(const Line &l, const Vec3 &up, double ir,
             inter = temp, obj = o;
     }
 
-    if (obj != nullptr) {
+    if (obj) {
         Rand r(0, 1);
         Point3 p = l.t(inter.t);
         Vec3 &normal = inter.normal;
@@ -37,7 +37,7 @@ void russian_rolette(const Line &l, const Vec3 &up, double ir,
         } else if (dice < obj->rr[0] + obj->rr[1]) { // reflexao
             Vec3 n_dir = 2 * normal * (normal * -l.dir) - (-l.dir);
             russian_rolette({p, n_dir}, up, ir, objs, list);
-        } else if (dice < obj->rr[0] + obj->rr[1]) { // refracao
+        } else if (dice < obj->rr[0] + obj->rr[1] + obj->rr[2]) { // refracao
             Vec3 wo = -l.dir.normalize();
             Vec3  n = normal;
             double cos_teta_i = wo * n;

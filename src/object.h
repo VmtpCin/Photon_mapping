@@ -41,7 +41,7 @@ struct Plane : Object {
         if (abs(normal * l.dir) < 1e-5)
             return {inf, normal};
 
-        int t = (normal * (origin - l.origin)) / (normal * l.dir);
+        double t = (normal * (origin - l.origin)) / (normal * l.dir);
 
         return {t > 0 ? t : inf, normal};
     }
