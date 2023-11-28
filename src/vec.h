@@ -84,6 +84,17 @@ struct Vec3 {
     Vec3 normalize() const {
         return *this / length();
     }
+
+    Vec3 perpendicular() const {
+        if (e[0] != 0)
+            return {-e[1], e[0], 0};
+        else if (e[1] != 0)
+            return {0, -e[2], e[1]};
+        else if (e[2] != 0)
+            return {e[2], 0, -e[0]};
+        else
+            return {0, 0, 0};
+    }
 };
 
 struct Point3 {
