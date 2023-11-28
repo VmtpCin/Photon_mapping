@@ -2,8 +2,8 @@
 #include "object.h"
 #include <fstream>
 
-void russian_rolette(const Line &l, const Vec3 &up, double ir,
-                     const std::vector<Object*> &objs, std::vector<Photon> &list) {
+void russian_rolette(const Line &l, double ir, const std::vector<Object*> &objs,
+                     std::vector<Photon> &list) {
     Intersection inter({1e100, {0, 0, 0}});
     Object *obj = nullptr;
 
@@ -21,22 +21,24 @@ void russian_rolette(const Line &l, const Vec3 &up, double ir,
 
         if (dice < obj->rr[0]) { // difusao
             double r1 = r.gen(), r2 = r.gen();
+            r1 = sqrt(r1);
 
-            const Vec3 w = (normal ^ up).normalize();
-            const Vec3 v = (w ^ up).normalize();
-            const Vec3 u = (v ^  w).normalize();
+            const Vec3 w = normal.normalize();
+            const Vec3 v = w.perpendicular();
+            const Vec3 u = v ^ w;
 
-            double teta = 1 / cos(sqrt(r1));
+            double teta = acos(r1);
             double phi  = 2 * M_PI * r2;
-            Vec3     sp = sin(teta) * cos(phi) * u + sin(teta) * sin(phi) * v + cos(teta) * w;
-            Vec3  n_dir = sp[0] * u + sp[1] * v + sp[2] * w;
+            Vec3  n_dir = sin(teta) * cos(phi) * u + sin(teta) * sin(phi) * v + r1 * w;
  
             Line n_l({p, n_dir});
 
-            russian_rolette(n_l, up, ir, objs, list);
+            list.push_back({p, l.dir, 0});
+
+            russian_rolette(n_l, ir, objs, list);
         } else if (dice < obj->rr[0] + obj->rr[1]) { // reflexao
             Vec3 n_dir = 2 * normal * (normal * -l.dir) - (-l.dir);
-            russian_rolette({p, n_dir}, up, ir, objs, list);
+            russian_rolette({p, n_dir}, ir, objs, list);
         } else if (dice < obj->rr[0] + obj->rr[1] + obj->rr[2]) { // refracao
             Vec3 wo = -l.dir.normalize();
             Vec3  n = normal;
@@ -54,7 +56,7 @@ void russian_rolette(const Line &l, const Vec3 &up, double ir,
             if (temp > 0) {
                 double cos_teta2 = sqrt(temp);
                 Vec3 n_dir = l.dir / eta - (cos_teta2 - cos_teta_i / eta) * n;
-                russian_rolette({p, n_dir}, up, obj->ir, objs, list);
+                russian_rolette({p, n_dir}, obj->ir, objs, list);
             }
         } else { // absorcao
             list.push_back({p, l.dir, 0});
@@ -63,7 +65,7 @@ void russian_rolette(const Line &l, const Vec3 &up, double ir,
 }
 
 std::vector<Photon> emit_photons(const Point3 &p, int num,
-                    const Vec3 &up, const std::vector<Object*> &objs) {
+                                 const std::vector<Object*> &objs) {
     std::vector<Photon> list;
 
     Line l;
@@ -75,7 +77,7 @@ std::vector<Photon> emit_photons(const Point3 &p, int num,
             l.dir = {r.gen(), r.gen(), r.gen()};
         while (l.dir.length_sq() > 1);
 
-        russian_rolette(l, up, 1, objs, list);
+        russian_rolette(l, 1, objs, list);
     }
 
     return list;
