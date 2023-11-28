@@ -77,6 +77,6 @@ struct Camera {
 };
 
 extern void raycast(const Camera &cam, const std::vector<Object*> &objs);
-extern std::vector<Photon> emit_photons(const Point3 &p, int num, const Vec3 &up,
+extern std::vector<Photon> emit_photons(const Point3 &p, int num,
                                         const std::vector<Object*> &objs);
 extern void starfield_projection(const Camera &cam, const std::vector<Photon> &photons);
