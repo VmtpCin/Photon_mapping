@@ -1,8 +1,10 @@
 #pragma once
 #include <math.h>
+#include <iostream>
 #include "vec.h"
 
-constexpr double inf = 1e100;
+constexpr double t_min = 1e-5;
+constexpr double inf = INFINITY;
 
 struct Intersection {
     double t;
@@ -29,8 +31,8 @@ struct Object {
 };
 
 struct Plane : Object {
-    Point3 origin;
-    Vec3 normal;
+    const Point3 origin;
+    const Vec3 normal;
 
     Plane(const Point3 &p, const Vec3 &v) : origin(p), normal(v) {}
 
@@ -43,13 +45,13 @@ struct Plane : Object {
 
         double t = (normal * (origin - l.origin)) / (normal * l.dir);
 
-        return {t > 0 ? t : inf, normal};
+        return {t > t_min ? t : inf, normal};
     }
 };
 
 struct Sphere : Object {
-    Point3 center;
-    double radius;
+    const Point3 center;
+    const double radius;
 
     Sphere(const Point3 &p, double r) : center(p), radius(r) {}
 
@@ -69,8 +71,8 @@ struct Sphere : Object {
         
         delta = sqrt(delta);
 
-        double t = -b - delta > 0 ? (-b - delta) / (2 * a)
-                                  : (-b + delta) / (2 * a);
+        double t = -b - delta > (2 * a) * t_min ? (-b - delta) / (2 * a)
+                                                : (-b + delta) / (2 * a);
 
         if (t < 1e-5)
             return {inf, l.dir};
@@ -79,3 +81,40 @@ struct Sphere : Object {
     }
 };
 
+struct Triangle : Object {
+    const Point3 vertices[3];
+
+    Triangle(const Point3 &p1, const Point3 &p2, const Point3 &p3) : vertices{p1, p2, p3} { }
+    Triangle(const Point3 &p1, const Point3 &p2, const Point3 &p3,
+             const double t_rr[3], double t_ir) : Object(t_rr, t_ir), vertices{p1, p2, p3} { }
+
+    Intersection intersect(const Line &l) const override {
+        const Vec3    oc  = vertices[0] -   l.origin;
+        const Vec3 edge1  = vertices[0] - vertices[1];
+        const Vec3 edge2  = vertices[0] - vertices[2];
+        const Vec3 normal = edge1 ^ edge2;
+
+        constexpr auto signal = [](double d) { return (d > 0) - (d < 0); };
+        
+        const double holder = l.dir * normal;
+
+        if (abs(holder) < 1e-5)
+            return {inf, l.dir};
+
+        const Vec3 vp = oc ^ l.dir;
+
+        const double beta = edge1 * vp;
+        if (signal(beta) * signal(holder) < 0)
+            return {inf, l.dir};
+
+        const double gamma = edge2 * -vp;
+        if (signal(gamma) * signal(holder) < 0)
+            return {inf, l.dir};
+
+        if (holder > 0 ? beta + gamma > holder : beta + gamma < holder)
+            return {inf, l.dir};
+
+        const double t = (oc * normal) / holder;
+        return {t > t_min ? t : inf, normal};
+    }
+};

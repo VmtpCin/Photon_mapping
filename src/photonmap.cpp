@@ -24,7 +24,7 @@ void russian_rolette(const Line &l, double ir, const std::vector<Object*> &objs,
             r1 = sqrt(r1);
 
             const Vec3 w = normal.normalize();
-            const Vec3 v = w.perpendicular();
+            const Vec3 v = w.perpendicular().normalize();
             const Vec3 u = v ^ w;
 
             double teta = acos(r1);
@@ -102,11 +102,8 @@ void starfield_projection(const Camera &cam, const std::vector<Photon> &photons)
 
         if (inter && l.dir * cam.oa < 0) {
             Vec3 v = l.t(inter.t) - p_i;
-            double v_del_h = v * cam.desl_h / cam.desl_h.length_sq();
-            double v_del_v = v * cam.desl_v / cam.desl_v.length_sq();
-
-            int x = round(v_del_v);
-            int y = round(v_del_h);
+            int x = round(v * cam.desl_v / cam.desl_v.length_sq());
+            int y = round(v * cam.desl_h / cam.desl_h.length_sq());
 
             if (0 <= x && x < cam.hres && 0 <= y && y < cam.vres)
                 grid[x][y] = true;
