@@ -1,4 +1,4 @@
-#include "render.h"
+#include "tracing.h"
 #include "object.h"
 #include <fstream>
 
@@ -17,10 +17,14 @@ void raycast(const Camera &cam, const std::vector<Object*> &objs) {
                     inter = temp;
             }
 
-            bool color = inter.t < 1e100;
-            outFile << 255 * color << " "
-                    << 255 * color << " "
-                    << 255 * color << std::endl;
+            bool b_inter = inter.t < 1e100;
+            short color = b_inter ? 255 * abs(   inter.normal.normalize()
+                                               * l.dir.normalize())
+                                          : 0;
+
+            outFile << color << " "
+                    << color << " "
+                    << color << std::endl;
         }
 
     outFile.close();
