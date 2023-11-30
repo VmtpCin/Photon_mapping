@@ -5,11 +5,7 @@
 #include <random>
 #include <string>
 
-#ifdef MY_PATH
-const std::string path = MY_PATH;
-#else
-const std::string path = "";
-#endif
+extern const std::string path;
 
 struct Rand {
 private:

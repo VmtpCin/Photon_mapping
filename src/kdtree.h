@@ -1,37 +1,46 @@
 #pragma once
 #include "vec.h"
-#include "render.h"
+#include "tracing.h"
 #include <algorithm>
 #include <vector>
+#include <iostream>
 
 struct KDTree {
     struct Node {
-        Point3 p;
-        Node *right, *left;        
+        Photon p;
+        Node *left, *right;        
     };
 
     Node *root;
 
+    KDTree() {}
+    KDTree(std::vector<Photon> &v) {
+        insert(v);
+    }
+
     template<int depth>
-    Node* insert(std::vector<Photon>::iterator photon_b,
-                 std::vector<Photon>::iterator photon_e) {
-        if (photon_b == photon_e)
+    Node* insert(std::vector<Photon> &v, size_t begin, size_t end) {
+        if (begin == end)
             return nullptr;
-        if (photon_e - photon_b == 1)
-            return &Node({points[0], nullptr, nullptr});
+        if (end - begin == 1)
+            return new Node({v[begin], nullptr, nullptr});
 
-        const auto points_m = (photon_b + photon_e) / 2;
-        std::nth_element(photon_b, points_m, photon_e, Photon::is_less<depth>());
+        const auto middle = (begin + end) / 2;
 
-        Node n;
-        n.p = *points_m;
-        n.left  = insert<(depth + 1) % 3>(photon_b, points_m);
-        n.right = insert<(depth + 1) % 3>(points_m + 1, photon_e);
+        constexpr auto comparator = [](const Photon &p1, const Photon &p2) {
+            return p1.point[depth] < p2.point[depth];
+        };
 
-        return &n;
+        const auto &v_b = v.begin();
+        std::nth_element(v_b + begin, v_b + middle, v_b + end, comparator);
+        Node *n = new Node({v[middle],
+                            insert<(depth + 1) % 3>(v, begin, middle),
+                            insert<(depth + 1) % 3>(v, middle + 1, end)});
+
+        return n;
     }
 
     void insert(std::vector<Photon> &v) {
-        root = insert<0>(v.begin(), v.end());
+        root = insert<0>(v, 0, v.size());
     }
 };

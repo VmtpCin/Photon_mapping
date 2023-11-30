@@ -1,4 +1,6 @@
 #pragma once
+#include <iostream>
+#include <string>
 #include <math.h>
 
 struct Vec3 {
@@ -13,6 +15,16 @@ struct Vec3 {
 
     double& operator[](int i)       { return e[i]; }
     double  operator[](int i) const { return e[i]; }
+
+    operator std::string() const {
+        return     "(" + std::to_string(x())
+                + ", " + std::to_string(y())
+                + ", " + std::to_string(z()) + ")";
+    }
+
+    friend std::ostream& operator<<(std::ostream &os, const Vec3 &v) {
+        return os << std::string(v);
+    }
 
     Vec3 operator-() const {
         return {-e[0], -e[1], -e[2]};
@@ -113,6 +125,16 @@ struct Point3 {
 
     double& operator[](int i)       { return e[i]; }
     double  operator[](int i) const { return e[i]; }
+
+    operator std::string() const {
+        return     "(" + std::to_string(x())
+                + ", " + std::to_string(y())
+                + ", " + std::to_string(z()) + ")";
+    }
+
+    friend std::ostream& operator<<(std::ostream &os, const Point3 &p) {
+        return os << std::string(p);
+    }
 
     Point3 operator+(const Vec3 &v) const {
         return {e[0] + v[0], e[1] + v[1], e[2] + v[2]}; 
