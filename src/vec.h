@@ -157,11 +157,6 @@ struct Point3 {
     double distance(const Point3 &v) const {
         return sqrt(distance_sq(v));
     }
-
-    template<int elem>
-    bool is_less(const Point3 &p) const {
-        return e[elem] < p[elem];
-    }
 };
 
 struct Line {
