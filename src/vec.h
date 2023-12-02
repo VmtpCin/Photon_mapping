@@ -154,8 +154,8 @@ struct Point3 {
         return dx * dx + dy * dy + dz * dz;
     }
 
-    double distance(const Point3 &v) const {
-        return sqrt(distance_sq(v));
+    double distance(const Point3 &p) const {
+        return sqrt(distance_sq(p));
     }
 };
 
@@ -176,3 +176,5 @@ inline Vec3 operator*(const double &d, const Vec3 &v) {
     return v * d;
 }
 
+extern Point3 interpolate(const Point3 &p1, const Point3 &p2, const Point3 &p3, double s, double t);
+extern Point3 interpolate(const Point3 &p1, const Point3 &p2, double s);

@@ -1,6 +1,7 @@
 #pragma once
 #include <math.h>
 #include <iostream>
+#include <vector>
 #include "vec.h"
 
 constexpr double t_min = 1e-5;
@@ -66,8 +67,8 @@ struct Triangle : Object {
 };
 
 struct Parallelogram : Object {
-    Point3 origin;
-    Vec3 edge1, edge2;
+    const Point3 origin;
+    const Vec3 edge1, edge2;
 
     Parallelogram(const Point3 &p1, const Point3 &p2, const Point3 &p3)
                  : origin(p1), edge1(p1 - p2), edge2(p1 - p3) { }
@@ -77,3 +78,13 @@ struct Parallelogram : Object {
 
     Intersection intersect(const Line &l) const override;
 };
+
+
+extern Point3 bezier_curve(const std::vector<Point3> &points, double t);
+extern Point3 bezier_triangle(double s, double t);
+
+extern std::vector<Point3> create_surface_triangle(Point3 (*f)(double, double),
+                            int s_step, int t_step, std::vector<Object*> &objs);
+
+extern std::vector<Point3> create_bezier_superfice(const std::vector<std::vector<Point3>> &control,
+                                                   int s_step, int t_step, std::vector<Object*> &objs);

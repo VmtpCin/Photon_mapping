@@ -31,7 +31,7 @@ int main() {
 
     // raycast(cam, objects);
 
-    auto photons = emit_photons({3, 3, 0}, 1e2, objects);
+    auto photons = emit_photons({3, 3, 0}, 1e7, objects);
     starfield_projection(cam, photons);
 
     KDTree kd(photons);
