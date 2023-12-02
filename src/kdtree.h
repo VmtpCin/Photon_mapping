@@ -27,7 +27,7 @@ private:
         if (b == e)
             return;
 
-        size_t m = (b + e) / 2;
+        const size_t m = (b + e) / 2;
         const Point3 &cur_p = (*this)[m].point;
 
         if (p.distance_sq(cur_p) <= r_sq)
@@ -43,7 +43,7 @@ private:
         } else {
             find_all_near<(depth + 1) % 3>(p, r_sq, m + 1, e, kdt);
 
-            if (dist <= r_sq)
+            if (dist * dist <= r_sq)
                 find_all_near<(depth + 1) % 3>(p, r_sq, b, m, kdt);
         }
     }
