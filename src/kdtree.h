@@ -53,8 +53,6 @@ public:
 
     KDTree find_all_near(const Point3 &p, double radius) const {
         KDTree photons;
-        if (size() == 0) return photons;
-
         find_all_near<0>(p, radius * radius, 0, size(), photons);
         return photons;
     }
