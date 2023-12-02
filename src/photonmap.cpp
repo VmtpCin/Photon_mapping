@@ -1,9 +1,10 @@
 #include "tracing.h"
+#include "kdtree.h"
 #include "object.h"
 #include <fstream>
 
 void russian_rolette(const Line &l, double ir, const std::vector<Object*> &objs,
-                     std::vector<Photon> &list) {
+                     KDTree &kdt) {
     Intersection inter({1e100, {0, 0, 0}});
     Object *obj = nullptr;
 
@@ -33,12 +34,12 @@ void russian_rolette(const Line &l, double ir, const std::vector<Object*> &objs,
  
             Line n_l({p, n_dir});
 
-            list.push_back({p, l.dir, 0});
+            kdt.push_back({p, l.dir, 0});
 
-            russian_rolette(n_l, ir, objs, list);
+            russian_rolette(n_l, ir, objs, kdt);
         } else if (dice < obj->rr[0] + obj->rr[1]) { // reflexao
             Vec3 n_dir = 2 * normal * (normal * -l.dir) - (-l.dir);
-            russian_rolette({p, n_dir}, ir, objs, list);
+            russian_rolette({p, n_dir}, ir, objs, kdt);
         } else if (dice < obj->rr[0] + obj->rr[1] + obj->rr[2]) { // refracao
             Vec3 wo = -l.dir.normalize();
             Vec3  n = normal;
@@ -56,17 +57,16 @@ void russian_rolette(const Line &l, double ir, const std::vector<Object*> &objs,
             if (temp > 0) {
                 double cos_teta2 = sqrt(temp);
                 Vec3 n_dir = l.dir / eta - (cos_teta2 - cos_teta_i / eta) * n;
-                russian_rolette({p, n_dir}, obj->ir, objs, list);
+                russian_rolette({p, n_dir}, obj->ir, objs, kdt);
             }
         } else { // absorcao
-            list.push_back({p, l.dir, 0});
+            kdt.push_back({p, l.dir, 0});
         }
     }
 }
 
-std::vector<Photon> emit_photons(const Point3 &p, int num,
-                                 const std::vector<Object*> &objs) {
-    std::vector<Photon> list;
+KDTree emit_photons(const Point3 &p, int num, const std::vector<Object*> &objs) {
+    KDTree kdt;
 
     Line l;
     l.origin = p;
@@ -77,13 +77,13 @@ std::vector<Photon> emit_photons(const Point3 &p, int num,
             l.dir = {r.gen(), r.gen(), r.gen()};
         while (l.dir.length_sq() > 1);
 
-        russian_rolette(l, 1, objs, list);
+        russian_rolette(l, 1, objs, kdt);
     }
 
-    return list;
+    return kdt;
 }
 
-void starfield_projection(const Camera &cam, const std::vector<Photon> &photons) {
+void starfield_projection(const Camera &cam, const KDTree &photons) {
     std::ofstream outFile(path);
 
     bool grid[500][500];

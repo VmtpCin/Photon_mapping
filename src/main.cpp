@@ -31,10 +31,10 @@ int main() {
 
     // raycast(cam, objects);
 
-    auto photons = emit_photons({3, 3, 0}, 1e7, objects);
-    starfield_projection(cam, photons);
+    KDTree kdt = emit_photons({3, 3, 0}, 1e6, objects);
+    starfield_projection(cam, kdt);
 
-    KDTree kd(photons);
+    kdt.sort();
 
     printf("It took %fs\n", (clock() - start_time)/1000.0);
 }

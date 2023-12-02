@@ -1,4 +1,5 @@
 #pragma once
+#include "kdtree.h"
 #include "vec.h"
 #include "object.h"
 #include <vector>
@@ -29,18 +30,6 @@ struct Color {
         return yes;
     }
 };
-
-struct Photon {
-    Point3 point;
-    Vec3 dir;
-    double I;
-
-    template<int elem>
-    bool is_less(const Photon &p) const {
-        return point[elem] < p.point[elem];
-    }
-};
-
 
 struct Camera {
     Point3 origin;
@@ -73,6 +62,5 @@ struct Camera {
 };
 
 extern void raycast(const Camera &cam, const std::vector<Object*> &objs);
-extern std::vector<Photon> emit_photons(const Point3 &p, int num,
-                                        const std::vector<Object*> &objs);
-extern void starfield_projection(const Camera &cam, const std::vector<Photon> &photons);
+extern KDTree emit_photons(const Point3 &p, int num, const std::vector<Object*> &objs);
+extern void starfield_projection(const Camera &cam, const KDTree &kdt);
