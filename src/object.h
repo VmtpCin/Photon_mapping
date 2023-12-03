@@ -21,10 +21,13 @@ struct Intersection {
 };
 
 struct Object {
-    double rr[3], ir;
+    double rr[3] = {0, 0, 0}, ir = 1;
+    Color color = 1;
 
     Object() : rr{0, 0, 1}, ir(1) {};
     Object(const double t_rr[3], double t_ir) : rr{t_rr[0], t_rr[1], t_rr[2]}, ir(t_ir) {}
+    Object(const double t_rr[3], double t_ir, Color &c)
+          : rr{t_rr[0], t_rr[1], t_rr[2]}, ir(t_ir), color(c) {}
 
     virtual Intersection intersect(const Line &l) const { return {inf, l.dir}; };
 };
@@ -38,6 +41,9 @@ struct Plane : Object {
     Plane(const Point3 &p, const Vec3 &v, const double t_rr[3], double t_ir)
             : Object(t_rr, t_ir), origin(p), normal(v) { }
 
+    Plane(const Point3 &p, const Vec3 &v, const double t_rr[3], double t_ir, Color c)
+            : Object(t_rr, t_ir, c), origin(p), normal(v) { }
+
     Intersection intersect(const Line &l) const override;
 };
 
@@ -49,6 +55,9 @@ struct Sphere : Object {
 
     Sphere(const Point3 &p, double r, const double t_rr[3], double t_ir)
             : Object(t_rr, t_ir), center(p), radius(r) { }
+
+    Sphere(const Point3 &p, double r, const double t_rr[3], double t_ir, Color c)
+            : Object(t_rr, t_ir, c), center(p), radius(r) { }
 
     Intersection intersect(const Line &l) const override;
 };
@@ -62,6 +71,9 @@ struct Triangle : Object {
     Triangle(const Point3 &p1, const Point3 &p2, const Point3 &p3,
              const double t_rr[3], double t_ir) : Object(t_rr, t_ir),
              origin(p1), edge1(p1 - p2), edge2(p1 - p3) { }
+    Triangle(const Point3 &p1, const Point3 &p2, const Point3 &p3,
+             const double t_rr[3], double t_ir, Color c) : Object(t_rr, t_ir, c),
+             origin(p1), edge1(p1 - p2), edge2(p1 - p3) { }
 
     Intersection intersect(const Line &l) const override;
 };
@@ -74,6 +86,9 @@ struct Parallelogram : Object {
                  : origin(p1), edge1(p1 - p2), edge2(p1 - p3) { }
     Parallelogram(const Point3 &p1, const Point3 &p2, const Point3 &p3,
                   const double t_rr[3], double t_ir) : Object(t_rr, t_ir),
+                  origin(p1), edge1(p1 - p2), edge2(p1 - p3) { }
+    Parallelogram(const Point3 &p1, const Point3 &p2, const Point3 &p3,
+                  const double t_rr[3], double t_ir, Color c) : Object(t_rr, t_ir, c),
                   origin(p1), edge1(p1 - p2), edge2(p1 - p3) { }
 
     Intersection intersect(const Line &l) const override;

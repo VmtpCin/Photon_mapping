@@ -49,11 +49,11 @@ private:
     }
 
     template <int depth>
-    double get_intensity(const Point3 &p, double r_sq, size_t b, size_t e) const {
+    Color get_intensity(const Point3 &p, double r_sq, size_t b, size_t e) const {
         if (b == e)
             return 0;
 
-        double intensity = 0;
+        Color intensity = 0;
         const size_t m = (b + e) / 2;
         const Point3 &cur_p = (*this)[m].point;
 
@@ -86,7 +86,7 @@ public:
         return photons;
     }
 
-    double get_intensity(const Point3 &p, double radius) const {
+    Color get_intensity(const Point3 &p, double radius) const {
         return get_intensity<0>(p, radius * radius, 0, size());
     }
 };

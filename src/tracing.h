@@ -2,6 +2,7 @@
 #include "kdtree.h"
 #include "vec.h"
 #include "object.h"
+#include <fstream>
 #include <vector>
 #include <random>
 #include <string>
@@ -49,6 +50,24 @@ struct Camera {
 
     Vec3 pixel_ray(int i, int j) const {
         return vec_initial + i * desl_h + j * desl_v;
+    }
+
+    void print() const {
+        double max_v = 0;
+        std::ofstream outFile(path);
+        outFile << "P3\n" << hres << " " << vres << "\n255\n";
+
+        for (const auto &vs : grid)
+            for (const auto &v : vs)
+                max_v = std::max({max_v, v.R, v.G, v.B});
+
+        for (int j = 0; j < hres; ++j)
+            for (int i = 0; i < vres; ++i)
+                outFile << int(255 * grid[i][j].R / max_v) << " "
+                        << int(255 * grid[i][j].G / max_v) << " "
+                        << int(255 * grid[i][j].B / max_v) << std::endl;
+
+        outFile.close();
     }
 };
 

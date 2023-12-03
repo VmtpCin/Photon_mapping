@@ -1,9 +1,8 @@
 #include "tracing.h"
 #include "kdtree.h"
 #include "object.h"
-#include <fstream>
 
-void russian_rolette(const Line &l, double ir, double intensity,
+void russian_rolette(const Line &l, double ir, Color intensity,
                      const std::vector<Object*> &objs, KDTree &kdt) {
     Intersection inter;
     Object *obj = nullptr;
@@ -19,6 +18,7 @@ void russian_rolette(const Line &l, double ir, double intensity,
         Point3 p = l.t(inter.t);
         Vec3 &normal = inter.normal;
         double dice = r.gen();
+        Color new_intensity = intensity & obj->color;
 
         if (dice < obj->rr[0]) { // difusao
             double r1 = r.gen(), r2 = r.gen();
@@ -36,10 +36,10 @@ void russian_rolette(const Line &l, double ir, double intensity,
 
             kdt.push_back({p, l.dir, intensity / 2});
 
-            russian_rolette(n_l, ir, intensity / 2, objs, kdt);
+            russian_rolette(n_l, ir, new_intensity / 2, objs, kdt);
         } else if (dice < obj->rr[0] + obj->rr[1]) { // reflexao
             Vec3 n_dir = 2 * normal * (normal * -l.dir) - (-l.dir);
-            russian_rolette({p, n_dir}, ir, intensity, objs, kdt);
+            russian_rolette({p, n_dir}, ir, new_intensity, objs, kdt);
         } else if (dice < obj->rr[0] + obj->rr[1] + obj->rr[2]) { // refracao
             Vec3 n = normal.normalize();
             double cos_teta_i = -l.dir.normalize() * n;
@@ -56,7 +56,10 @@ void russian_rolette(const Line &l, double ir, double intensity,
             if (temp > 0) {
                 double cos_teta2 = sqrt(temp);
                 Vec3 n_dir = l.dir / eta - (cos_teta2 - cos_teta_i / eta) * n;
-                russian_rolette({p, n_dir}, intensity, obj->ir, objs, kdt);
+                russian_rolette({p, n_dir}, obj->ir, new_intensity, objs, kdt);
+            } else {
+                Vec3 n_dir = 2 * normal * (normal * -l.dir) - (-l.dir);
+                russian_rolette({p, n_dir}, ir, new_intensity, objs, kdt);
             }
         } else { // absorcao
             kdt.push_back({p, l.dir, intensity});
@@ -70,7 +73,7 @@ KDTree emit_photons(const Point3 &p, int num, double power, const std::vector<Ob
     Line l;
     l.origin = p;
     Rand r(-1, 1);
-    double intensity = power / num;
+    Color intensity = power / num;
 
     for (int i = 0; i < num; ++i) {
         do
@@ -84,12 +87,6 @@ KDTree emit_photons(const Point3 &p, int num, double power, const std::vector<Ob
 }
 
 void visualize_photomap(const Camera &cam, const std::vector<Object*> &objs, const KDTree &kdt) {
-    std::ofstream outFile(path);
-
-    double grid[500][500];
-    double max_i = 0;
-
-    outFile << "P3\n" << cam.hres << " " << cam.vres << "\n255\n";
     for (int i = 0; i < cam.vres; ++i)
         for (int j = 0; j < cam.hres; ++j) {
             Line l{cam.origin, cam.pixel_ray(i, j)};
@@ -101,28 +98,11 @@ void visualize_photomap(const Camera &cam, const std::vector<Object*> &objs, con
                     inter = temp;
             }
 
-            grid[i][j] = inter ? kdt.get_intensity(l.t(inter.t), 0.2) : 0;
-            max_i = std::max(max_i, grid[i][j]);
+            cam.grid[i][j] = inter ? kdt.get_intensity(l.t(inter.t), 0.2) : Color(0);
         }
-
-    for (int j = 0; j < cam.hres; ++j)
-        for (int i = 0; i < cam.vres; ++i)
-            outFile << int(255*grid[i][j]/max_i) << " "
-                    << int(255*grid[i][j]/max_i) << " "
-                    << int(255*grid[i][j]/max_i) << std::endl;
-
-    outFile.close();
 }
 
 void starfield_projection(const Camera &cam, const KDTree &photons) {
-    std::ofstream outFile(path);
-
-    bool grid[500][500];
-
-    for (int i = 0; i < 500; ++i)
-        for (int j = 0; j < 500; ++j)
-            grid[i][j] = false;
-
     Plane pl_proj(cam.vec_initial + cam.origin, cam.oa);
     Line t_l({cam.origin, cam.vec_initial});
     Point3 p_i = t_l.t(pl_proj.intersect(t_l).t);
@@ -137,17 +117,7 @@ void starfield_projection(const Camera &cam, const KDTree &photons) {
             int y = round(v * cam.desl_h / cam.desl_h.length_sq());
 
             if (0 <= x && x < cam.hres && 0 <= y && y < cam.vres)
-                grid[x][y] = true;
+                cam.grid[x][y] = 255;
         }
     }
-
-    outFile << "P3\n" << cam.hres << " " << cam.vres << "\n255\n";
-    for (int i = 0; i < cam.vres; ++i) {
-        for (int j = 0; j < cam.hres; ++j)
-            outFile << 255 * grid[i][j] << " "
-                    << 255 * grid[i][j] << " "
-                    << 255 * grid[i][j] << std::endl;
-    }
-
-    outFile.close();
 }

@@ -80,7 +80,7 @@ struct Vec3 {
         return {e[0] * v[0], e[1] * v[1], e[2] * v[2]};
     }
 
-    Vec3 operator&=(const Vec3 &v) {
+    Vec3& operator&=(const Vec3 &v) {
         e[0] *= v[0], e[1] *= v[1], e[2] *= v[2];
         return *this;
     }
@@ -140,7 +140,7 @@ struct Point3 {
         return {e[0] + v[0], e[1] + v[1], e[2] + v[2]}; 
     }
 
-    Point3 operator+=(const Vec3 &v) {
+    Point3& operator+=(const Vec3 &v) {
         e[0] += v[0], e[1] += v[1], e[2] += v[2];
         return *this;
     }
@@ -169,7 +169,47 @@ struct Line {
 };
 
 struct Color {
-    double R, G, B; 
+    double R = 0, G = 0, B = 0;
+
+    Color() {}
+    Color(double d) { R = G = B = d; }
+    Color(double r, double g, double b) { R = r, G = g, B = b; }
+
+    Color operator&(const Color &c) const {
+        return {R * c.R, G * c.G, B * c.B};
+    }
+
+    Color operator+(const Color &c) const {
+        return {R + c.R, G + c.G, B + c.B};
+    }
+
+    Color operator*(const double d) const {
+        return {R * d, G * d, B * d};
+    }
+
+    Color operator/(const double d) const {
+        return {R / d, G / d, B / d};
+    }
+
+    Color& operator&=(const Color &c) {
+        R *= c.R, G *= c.G, B *= c.B;
+        return *this;
+    }
+
+    Color& operator+=(const Color &c) {
+        R += c.R, G += c.G, B += c.B;
+        return *this;
+    }
+
+    Color& operator*=(const double d) {
+        R *= d, G *= d, B * d;
+        return *this;
+    }
+
+    Color& operator/=(const double d) {
+        R /= d, G /= d, B /= d;
+        return *this;
+    }
 };
 
 struct Photon {

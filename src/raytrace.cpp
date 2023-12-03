@@ -1,14 +1,10 @@
 #include "tracing.h"
 #include "object.h"
-#include <fstream>
 
 void raycast(const Camera &cam, const std::vector<Object*> &objs) {
-    std::ofstream outFile(path);
-
-    outFile << "P3\n" << cam.hres << " " << cam.vres << "\n255\n";
     for (int i = 0; i < cam.vres; ++i)
         for (int j = 0; j < cam.hres; ++j) {
-            Line l{cam.origin, cam.pixel_ray(j, i)};
+            Line l{cam.origin, cam.pixel_ray(i, j)};
             Intersection inter;
 
             for (const auto &obj : objs) {
@@ -22,10 +18,6 @@ void raycast(const Camera &cam, const std::vector<Object*> &objs) {
                                                * l.dir.normalize())
                                           : 0;
 
-            outFile << color << " "
-                    << color << " "
-                    << color << std::endl;
+            cam.grid[i][j] = color;
         }
-
-    outFile.close();
 }

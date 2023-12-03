@@ -15,13 +15,13 @@ int main() {
     clock_t start_time = clock();
 
     vector<Object*> objects;
-    double trans[] = {0, 0, 0.95};
+    double trans[] = {0, 0, 0};
     double opaco[] = {1, 0, 0};
 
-    Sphere sp({3, 1, 0}, 0.5, trans, 1.5);
+    Sphere sp({3, 0, 0}, 0.5, trans, 1.5, {1, 0, 0});
     objects.push_back(&sp);
 
-    Plane pl({0, -1, 0}, {0, 1, 0}, opaco, 0);
+    Plane pl({0, -1, 0}, {0, 1, 0}, opaco, 0, {0, 1, 0});
     objects.push_back(&pl);
 
     // Parallelogram tr({4, 0, 0}, {5, 0, 1}, {5, 1, 0}, trans, 1);
@@ -31,11 +31,13 @@ int main() {
 
     // raycast(cam, objects);
 
-    KDTree kdt = emit_photons({3, 3, 0}, 1e6, 1e6, objects);
+    KDTree kdt = emit_photons({3, 3, 3}, 1e6, 1e6, objects);
     kdt.sort();
 
     // starfield_projection(cam, kdt);
     visualize_photomap(cam, objects, kdt);
+
+    cam.print();
 
     printf("It took %fs\n", (clock() - start_time)/1000.0);
 }
