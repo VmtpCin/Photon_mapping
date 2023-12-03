@@ -83,3 +83,46 @@ Intersection Parallelogram::intersect(const Line &l) const {
     const double t = t_n / holder;
     return {t > t_min ? t : inf, normal};
 }
+
+Intersection Bounding_Box::intersect(const Line &l) const {
+    const Vec3 oc1 = origin - l.origin;
+    const Vec3 oc2 = oc1 + diagonal;
+
+    const double h1 = l.dir.x(), h2 = l.dir.y(), h3 = l.dir.z();
+    const Vec3 vp1 = oc1 ^ l.dir, vp2 = oc2 ^ l.dir;
+
+    const double a1 = diagonal.x() * vp1.x(), a2 = diagonal.x() * vp2.x();
+    const double b1 = diagonal.y() * vp1.y(), b2 = diagonal.y() * vp2.y();
+    const double c1 = diagonal.z() * vp1.z(), c2 = diagonal.z() * vp2.z();
+
+    constexpr auto check1 = [](double holder, double b, double c) {
+        return holder > 0 ? 0 <= b && b <= holder && 0 <= c && c <= holder
+                          : 0 >= b && b >= holder && 0 >= c && c >= holder;
+    };
+
+    constexpr auto check2 = [](double holder, double t) {
+        return holder > 0 ? t > 0 : t < 0;
+    };
+
+    Intersection inter;
+
+    if (std::abs(h1) > 1e-5 && check1(h1, -b1, c1) && check2(h1, oc1.x()))
+        inter = std::min(inter, {oc1.x() / h1, { 1, 0, 0}});
+
+    if (std::abs(h1) > 1e-5 && check1(h1, b2, -c2) && check2(h1, oc2.x()))
+        inter = std::min(inter, {oc2.x() / h1, {-1, 0, 0}});
+
+    if (std::abs(h2) > 1e-5 && check1(h2, -c1, a1) && check2(h2, oc1.y()))
+        inter = std::min(inter, {oc1.y() / h2, {0,  1, 0}});
+
+    if (std::abs(h2) > 1e-5 && check1(h2, c2, -a2) && check2(h2, oc2.y()))
+        inter = std::min(inter, {oc2.y() / h2, {0, -1, 0}});
+
+    if (std::abs(h3) > 1e-5 && check1(h3, -a1, b1) && check2(h3, oc1.z()))
+        inter = std::min(inter, {oc1.z() / h3, {0, 0,  1}});
+
+    if (std::abs(h3) > 1e-5 && check1(h3, a2, -b2) && check2(h3, oc2.z()))
+        inter = std::min(inter, {oc2.z() / h3, {0, 0, -1}});
+
+    return inter;
+}

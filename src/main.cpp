@@ -22,13 +22,14 @@ int main() {
     objects.push_back(new Object(new Sphere({3, 0, 0}, 0.5), trans, 0.0, {0, 1, 0}));
     objects.push_back(new Object(new Plane({0, -1, 0}, {0, 1, 0}), opaco, 0.0, {0, 1, 0}));
 
+    // objects.push_back(new Object(new Bounding_Box({3, -0.5, -0.5}, {4, -1.5, -1.5})));
     // objects.push_back(new Object(new Triangle({4, 0, 0}, {5, 0, 1}, {5, 1, 0})));
 
     const Camera cam({-1, 0, 0}, {1, 0, 0}, {0, 1, 0}, 500, 500, 0.5, 0.5);
 
     // raycast(cam, objects);
 
-    KDTree kdt = emit_photons({3, 3, 3}, 1e6, 1e6, objects);
+    KDTree kdt = emit_photons({2, 3, 3}, 1e6, 1e6, objects);
     kdt.sort();
 
     // starfield_projection(cam, kdt);

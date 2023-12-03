@@ -26,7 +26,7 @@ struct Geometry {
 
 struct Object : Geometry {
     Geometry *geometry;
-    double rr[3] = {0, 0, 1}, ir = 1;
+    double rr[3] = {0, 0, 0}, ir = 1;
     Color color = 1;
 
     ~Object() { delete geometry; }
@@ -74,6 +74,25 @@ struct Parallelogram : Geometry {
 
     Parallelogram(const Point3 &p1, const Point3 &p2, const Point3 &p3)
                  : origin(p1), edge1(p2 - p1), edge2(p3 - p1) { }
+
+    Intersection intersect(const Line &l) const override;
+};
+
+struct Bounding_Box : Geometry {
+    const Point3 origin;
+    const Vec3 diagonal;
+
+    Point3 generate_origin(const Point3 &p1, const Point3 &p2) const {
+        return {std::min(p1[0], p2[0]), std::min(p1[1], p2[1]), std::min(p1[2], p2[2])};
+    }
+
+    Vec3 generate_diagonal(const Point3 &p1, const Point3 &p2) const {
+        const Point3 p = {std::max(p1[0], p2[0]), std::max(p1[1], p2[1]), std::max(p1[2], p2[2])};
+        return p - generate_origin(p1, p2);
+    }
+
+    Bounding_Box(const Point3 &p1, const Point3 &p2)
+                : origin(generate_origin(p1, p2)), diagonal(generate_diagonal(p1, p2)) { }
 
     Intersection intersect(const Line &l) const override;
 };
