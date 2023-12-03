@@ -2,7 +2,8 @@
 #include "kdtree.h"
 #include "tracing.h"
 #include "vec.h"
-#include "object.h"
+#include "geometry.h"
+#include "surface.h"
 using namespace std;
 
 #ifdef MY_PATH
@@ -18,14 +19,10 @@ int main() {
     double trans[] = {0, 0, 0};
     double opaco[] = {1, 0, 0};
 
-    Sphere sp({3, 0, 0}, 0.5, trans, 1.5, {1, 0, 0});
-    objects.push_back(&sp);
+    objects.push_back(new Object(new Sphere({3, 0, 0}, 0.5), trans, 0.0, {0, 1, 0}));
+    objects.push_back(new Object(new Plane({0, -1, 0}, {0, 1, 0}), opaco, 0.0, {0, 1, 0}));
 
-    Plane pl({0, -1, 0}, {0, 1, 0}, opaco, 0, {0, 1, 0});
-    objects.push_back(&pl);
-
-    // Parallelogram tr({4, 0, 0}, {5, 0, 1}, {5, 1, 0}, trans, 1);
-    // objects.push_back(&tr);
+    // objects.push_back(new Object(new Triangle({4, 0, 0}, {5, 0, 1}, {5, 1, 0})));
 
     const Camera cam({-1, 0, 0}, {1, 0, 0}, {0, 1, 0}, 500, 500, 0.5, 0.5);
 

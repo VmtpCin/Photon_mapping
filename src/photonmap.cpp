@@ -1,6 +1,6 @@
 #include "tracing.h"
 #include "kdtree.h"
-#include "object.h"
+#include "geometry.h"
 
 void russian_rolette(const Line &l, double ir, Color intensity,
                      const std::vector<Object*> &objs, KDTree &kdt) {

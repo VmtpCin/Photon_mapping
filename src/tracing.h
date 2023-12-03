@@ -1,7 +1,7 @@
 #pragma once
 #include "kdtree.h"
 #include "vec.h"
-#include "object.h"
+#include "geometry.h"
 #include <fstream>
 #include <vector>
 #include <random>

@@ -1,5 +1,5 @@
 #include "tracing.h"
-#include "object.h"
+#include "geometry.h"
 
 void raycast(const Camera &cam, const std::vector<Object*> &objs) {
     for (int i = 0; i < cam.vres; ++i)
@@ -16,7 +16,7 @@ void raycast(const Camera &cam, const std::vector<Object*> &objs) {
             bool b_inter = inter.t < 1e100;
             short color = b_inter ? 255 * abs(   inter.normal.normalize()
                                                * l.dir.normalize())
-                                          : 0;
+                                  : 0;
 
             cam.grid[i][j] = color;
         }
