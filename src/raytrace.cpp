@@ -9,7 +9,7 @@ void raycast(const Camera &cam, const std::vector<Object*> &objs) {
     for (int i = 0; i < cam.vres; ++i)
         for (int j = 0; j < cam.hres; ++j) {
             Line l{cam.origin, cam.pixel_ray(j, i)};
-            Intersection inter = {1e100, {0, 0, 0}};
+            Intersection inter;
 
             for (const auto &obj : objs) {
                 auto temp = obj->intersect(l);

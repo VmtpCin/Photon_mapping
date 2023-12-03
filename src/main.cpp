@@ -15,7 +15,7 @@ int main() {
     clock_t start_time = clock();
 
     vector<Object*> objects;
-    double trans[] = {0, 0, 0};
+    double trans[] = {0, 0, 0.95};
     double opaco[] = {1, 0, 0};
 
     Sphere sp({3, 1, 0}, 0.5, trans, 1.5);
@@ -31,10 +31,11 @@ int main() {
 
     // raycast(cam, objects);
 
-    KDTree kdt = emit_photons({3, 3, 0}, 1e6, objects);
-    starfield_projection(cam, kdt);
-
+    KDTree kdt = emit_photons({3, 3, 0}, 1e6, 1e6, objects);
     kdt.sort();
+
+    // starfield_projection(cam, kdt);
+    visualize_photomap(cam, objects, kdt);
 
     printf("It took %fs\n", (clock() - start_time)/1000.0);
 }

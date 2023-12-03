@@ -22,22 +22,13 @@ public:
     }
 };
 
-struct Color {
-    bool yes;
-    // unsigned int R, G, B;
-
-    operator bool() const {
-        return yes;
-    }
-};
-
 struct Camera {
     Point3 origin;
     Vec3 oa, up;
     int hres, vres;
     double tamx, tamy;
     Vec3 vec_initial, desl_h, desl_v;
-    std::vector<std::vector<Color>> grid;
+    mutable std::vector<std::vector<Color>> grid;
 
     Camera(const Point3 &o, const Point3 &t, const Vec3 &u, int hr,
            int vr, double tx, double ty, double dist = 1) : origin(o),
@@ -53,7 +44,7 @@ struct Camera {
 
         vec_initial = oa * dist - tamx * b - tamy * up;
 
-        // grid.assign(hres, std::vector<Color>(vres, Color()));
+        grid.assign(hres, std::vector<Color>(vres, Color()));
     }
 
     Vec3 pixel_ray(int i, int j) const {
@@ -62,5 +53,7 @@ struct Camera {
 };
 
 extern void raycast(const Camera &cam, const std::vector<Object*> &objs);
-extern KDTree emit_photons(const Point3 &p, int num, const std::vector<Object*> &objs);
+extern KDTree emit_photons(const Point3 &p, int num, double power,
+                           const std::vector<Object*> &objs);
 extern void starfield_projection(const Camera &cam, const KDTree &kdt);
+extern void visualize_photomap(const Camera &cam, const std::vector<Object*> &objs, const KDTree &kdt);

@@ -3,9 +3,9 @@
 #include "object.h"
 #include <fstream>
 
-void russian_rolette(const Line &l, double ir, const std::vector<Object*> &objs,
-                     KDTree &kdt) {
-    Intersection inter({1e100, {0, 0, 0}});
+void russian_rolette(const Line &l, double ir, double intensity,
+                     const std::vector<Object*> &objs, KDTree &kdt) {
+    Intersection inter;
     Object *obj = nullptr;
 
     for (const auto &o : objs) {
@@ -34,16 +34,15 @@ void russian_rolette(const Line &l, double ir, const std::vector<Object*> &objs,
  
             Line n_l({p, n_dir});
 
-            kdt.push_back({p, l.dir, 0});
+            kdt.push_back({p, l.dir, intensity / 2});
 
-            russian_rolette(n_l, ir, objs, kdt);
+            russian_rolette(n_l, ir, intensity / 2, objs, kdt);
         } else if (dice < obj->rr[0] + obj->rr[1]) { // reflexao
             Vec3 n_dir = 2 * normal * (normal * -l.dir) - (-l.dir);
-            russian_rolette({p, n_dir}, ir, objs, kdt);
+            russian_rolette({p, n_dir}, ir, intensity, objs, kdt);
         } else if (dice < obj->rr[0] + obj->rr[1] + obj->rr[2]) { // refracao
-            Vec3 wo = -l.dir.normalize();
-            Vec3  n = normal;
-            double cos_teta_i = wo * n;
+            Vec3 n = normal.normalize();
+            double cos_teta_i = -l.dir.normalize() * n;
             double eta = obj->ir;
 
             if (cos_teta_i < 0) {
@@ -57,30 +56,62 @@ void russian_rolette(const Line &l, double ir, const std::vector<Object*> &objs,
             if (temp > 0) {
                 double cos_teta2 = sqrt(temp);
                 Vec3 n_dir = l.dir / eta - (cos_teta2 - cos_teta_i / eta) * n;
-                russian_rolette({p, n_dir}, obj->ir, objs, kdt);
+                russian_rolette({p, n_dir}, intensity, obj->ir, objs, kdt);
             }
         } else { // absorcao
-            kdt.push_back({p, l.dir, 0});
+            kdt.push_back({p, l.dir, intensity});
         }
     }
 }
 
-KDTree emit_photons(const Point3 &p, int num, const std::vector<Object*> &objs) {
+KDTree emit_photons(const Point3 &p, int num, double power, const std::vector<Object*> &objs) {
     KDTree kdt;
 
     Line l;
     l.origin = p;
     Rand r(-1, 1);
+    double intensity = power / num;
 
     for (int i = 0; i < num; ++i) {
         do
             l.dir = {r.gen(), r.gen(), r.gen()};
         while (l.dir.length_sq() > 1);
 
-        russian_rolette(l, 1, objs, kdt);
+        russian_rolette(l, 1, intensity, objs, kdt);
     }
 
     return kdt;
+}
+
+void visualize_photomap(const Camera &cam, const std::vector<Object*> &objs, const KDTree &kdt) {
+    std::ofstream outFile(path);
+
+    double grid[500][500];
+    double max_i = 0;
+
+    outFile << "P3\n" << cam.hres << " " << cam.vres << "\n255\n";
+    for (int i = 0; i < cam.vres; ++i)
+        for (int j = 0; j < cam.hres; ++j) {
+            Line l{cam.origin, cam.pixel_ray(i, j)};
+            Intersection inter;
+
+            for (const auto &obj : objs) {
+                auto temp = obj->intersect(l);
+                if (temp < inter)
+                    inter = temp;
+            }
+
+            grid[i][j] = inter ? kdt.get_intensity(l.t(inter.t), 0.2) : 0;
+            max_i = std::max(max_i, grid[i][j]);
+        }
+
+    for (int j = 0; j < cam.hres; ++j)
+        for (int i = 0; i < cam.vres; ++i)
+            outFile << int(255*grid[i][j]/max_i) << " "
+                    << int(255*grid[i][j]/max_i) << " "
+                    << int(255*grid[i][j]/max_i) << std::endl;
+
+    outFile.close();
 }
 
 void starfield_projection(const Camera &cam, const KDTree &photons) {

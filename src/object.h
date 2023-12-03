@@ -8,7 +8,7 @@ constexpr double t_min = 1e-5;
 constexpr double inf = INFINITY;
 
 struct Intersection {
-    double t;
+    double t = inf;
     Vec3 normal;
 
     operator bool() const {

@@ -35,7 +35,7 @@ private:
 
         const double dist = p[depth] - cur_p[depth];
 
-        if (p[depth] < cur_p[depth]) {
+        if (dist < 0) {
             find_all_near<(depth + 1) % 3>(p, r_sq, b, m, kdt);
 
             if (dist * dist <= r_sq)
@@ -48,6 +48,35 @@ private:
         }
     }
 
+    template <int depth>
+    double get_intensity(const Point3 &p, double r_sq, size_t b, size_t e) const {
+        if (b == e)
+            return 0;
+
+        double intensity = 0;
+        const size_t m = (b + e) / 2;
+        const Point3 &cur_p = (*this)[m].point;
+
+        if (p.distance_sq(cur_p) <= r_sq)
+            intensity += (*this)[m].I;
+
+        const double dist = p[depth] - cur_p[depth];
+
+        if (dist < 0) {
+            intensity += get_intensity<(depth + 1) % 3>(p, r_sq, b, m);
+
+            if (dist * dist <= r_sq)
+                intensity += get_intensity<(depth + 1) % 3>(p, r_sq, m + 1, e);
+        } else {
+            intensity += get_intensity<(depth + 1) % 3>(p, r_sq, m + 1, e);
+
+            if (dist * dist <= r_sq)
+                intensity += get_intensity<(depth + 1) % 3>(p, r_sq, b, m);
+        }
+
+        return intensity;
+    }
+
 public:
     void sort() { return sort<0>(0, size()); }
 
@@ -55,5 +84,9 @@ public:
         KDTree photons;
         find_all_near<0>(p, radius * radius, 0, size(), photons);
         return photons;
+    }
+
+    double get_intensity(const Point3 &p, double radius) const {
+        return get_intensity<0>(p, radius * radius, 0, size());
     }
 };
