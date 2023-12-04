@@ -22,9 +22,9 @@ int main() {
 
     objects.push_back(new Object(new Parallelogram({0, -1, -1}, {4, -1, -1}, {0,  1, -1}), opaco, {1, 0, 0})); // right
     objects.push_back(new Object(new Parallelogram({0, -1,  1}, {4, -1,  1}, {0,  1,  1}), opaco, {0, 1, 0})); // left
-    objects.push_back(new Object(new Parallelogram({4, -1, -1}, {4, -1,  1}, {4,  1, -1}))); // back
-    objects.push_back(new Object(new Parallelogram({0, -1, -1}, {4, -1, -1}, {0, -1,  1}))); // down
-    objects.push_back(new Object(new Parallelogram({0,  1, -1}, {4,  1, -1}, {0,  1,  1}))); // up
+    objects.push_back(new Object(new Parallelogram({4, -1, -1}, {4, -1,  1}, {4,  1, -1}), opaco, {0, 0, 1})); // back
+    objects.push_back(new Object(new Parallelogram({0, -1, -1}, {4, -1, -1}, {0, -1,  1}), opaco)); // down
+    objects.push_back(new Object(new Parallelogram({0,  1, -1}, {4,  1, -1}, {0,  1,  1}), opaco)); // up
 
     objects.push_back(new Object(new Sphere({3, -0.6,  0.5}, 0.4), reflx));
     objects.push_back(new Object(new Sphere({2.5, -0.6, -0.5}, 0.4), trans, 3));

@@ -51,22 +51,23 @@ Color castray(const Line &l, const std::vector<Object*> &objs, const KDTree &kdt
 
         if (obj->rr[2] > 0) {
             Vec3 n = normal.normalize();
-            double cos_teta_i = -l.dir.normalize() * n;
-            double eta = obj->ir;
+            Vec3 dir = l.dir.normalize();
+            double cosI = -dir * n;
+            double eta = 1.0/obj->ir;
 
-            if (cos_teta_i < 0) {
-                cos_teta_i *= -1;
+            if (cosI < 0) {
+                cosI *= -1;
                 n *= -1;
                 eta = 1/eta;
             }
 
-            double temp = 1 - (1 - cos_teta_i * cos_teta_i) / (eta * eta);
+            double temp = 1 - (eta * eta) * (1 - cosI * cosI);
+
             if (temp > 0) {
-                double cos_teta2 = sqrt(temp);
-                Vec3 n_dir = l.dir / eta - (cos_teta2 - cos_teta_i / eta) * n;
+                Vec3 n_dir = eta * dir - (sqrt(temp) - cosI * eta) * n;
                 result += obj->rr[2] * castray({p, n_dir}, objs, kdt, depth + 1);
             } else {
-                Vec3 n_dir = l.dir - 2 * n * (n * l.dir);
+                Vec3 n_dir = dir - 2 * n * (n * dir);
                 result += obj->rr[2] * castray({p, n_dir}, objs, kdt, depth + 1);
             }
         }
