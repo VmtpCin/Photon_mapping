@@ -13,11 +13,11 @@ Intersection Plane::intersect(const Line &l) const {
     const double a = normal * (origin - l.origin);
     const double b = normal * l.dir;
 
-    if (abs(b) < 1e-5 || ((a > 0) ^ (b > 0)))
+    if (abs(b) < 1e-5 || ((a > 0) != (b > 0)))
         return {inf, normal};
 
     const double t = a / b; 
-    return {t > t_min ? t : inf, normal};
+    return {t > t_min ? t : inf, b < 0 ? normal : -normal};
 }
 
 Intersection Sphere::intersect(const Line &l) const {
@@ -60,7 +60,7 @@ Intersection Triangle::intersect(const Line &l) const {
         return {inf, l.dir};
 
     const double t = t_n / holder;
-    return {t > t_min ? t : inf, normal};
+    return {t > t_min ? t : inf, holder < 0 ? normal : -normal};
 }
 
 Intersection Parallelogram::intersect(const Line &l) const {
@@ -71,7 +71,7 @@ Intersection Parallelogram::intersect(const Line &l) const {
     if (abs(holder) < 1e-5)
         return {inf, l.dir};
 
-    const Vec3 vp = oc ^ l.dir;
+    const Vec3 vp = l.dir ^ oc;
     const double b = edge1 * vp;
     const double c = edge2 * -vp;
     const double t_n = oc * normal;
@@ -81,7 +81,7 @@ Intersection Parallelogram::intersect(const Line &l) const {
         return {inf, l.dir};
 
     const double t = t_n / holder;
-    return {t > t_min ? t : inf, normal};
+    return {t > t_min ? t : inf, holder < 0 ? normal : -normal};
 }
 
 Intersection Bounding_Box::intersect(const Line &l) const {

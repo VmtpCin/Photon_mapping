@@ -226,5 +226,9 @@ inline Vec3 operator*(const double &d, const Vec3 &v) {
     return v * d;
 }
 
+inline Color operator*(const double &d, const Color &c) {
+    return c * d;
+}
+
 extern Point3 interpolate(const Point3 &p1, const Point3 &p2, const Point3 &p3, double s, double t);
 extern Point3 interpolate(const Point3 &p1, const Point3 &p2, double s);

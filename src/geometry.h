@@ -32,6 +32,10 @@ struct Object : Geometry {
     ~Object() { delete geometry; }
 
     Object(Geometry *geo) : geometry(geo) {}
+    Object(Geometry *geo, const double t_rr[3])
+            : geometry(geo), rr{t_rr[0], t_rr[1], t_rr[2]} {}
+    Object(Geometry *geo, const double t_rr[3], Color c)
+            : geometry(geo), rr{t_rr[0], t_rr[1], t_rr[2]}, color(c) {}
     Object(Geometry *geo, const double t_rr[3], double t_ir)
             : geometry(geo), rr{t_rr[0], t_rr[1], t_rr[2]}, ir(t_ir) {}
     Object(Geometry *geo, const double t_rr[3], double t_ir, Color c)

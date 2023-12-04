@@ -3,7 +3,10 @@
 #include "geometry.h"
 
 void russian_rolette(const Line &l, double ir, Color intensity,
-                     const std::vector<Object*> &objs, KDTree &kdt) {
+                     const std::vector<Object*> &objs, KDTree &kdt, int depth) {
+    if (depth > 5)
+        return;
+
     Intersection inter;
     Object *obj = nullptr;
 
@@ -34,12 +37,12 @@ void russian_rolette(const Line &l, double ir, Color intensity,
  
             Line n_l({p, n_dir});
 
-            kdt.push_back({p, l.dir, intensity / 2});
+            kdt.push_back({p, l.dir.normalize(), new_intensity / 2});
 
-            russian_rolette(n_l, ir, new_intensity / 2, objs, kdt);
+            russian_rolette(n_l, ir, new_intensity / 2, objs, kdt, depth + 1);
         } else if (dice < obj->rr[0] + obj->rr[1]) { // reflexao
-            Vec3 n_dir = 2 * normal * (normal * -l.dir) - (-l.dir);
-            russian_rolette({p, n_dir}, ir, new_intensity, objs, kdt);
+            Vec3 n_dir = l.dir - 2 * normal * (normal * l.dir) / normal.length_sq();
+            russian_rolette({p, n_dir}, ir, new_intensity, objs, kdt, depth + 1);
         } else if (dice < obj->rr[0] + obj->rr[1] + obj->rr[2]) { // refracao
             Vec3 n = normal.normalize();
             double cos_teta_i = -l.dir.normalize() * n;
@@ -56,13 +59,13 @@ void russian_rolette(const Line &l, double ir, Color intensity,
             if (temp > 0) {
                 double cos_teta2 = sqrt(temp);
                 Vec3 n_dir = l.dir / eta - (cos_teta2 - cos_teta_i / eta) * n;
-                russian_rolette({p, n_dir}, obj->ir, new_intensity, objs, kdt);
+                russian_rolette({p, n_dir}, obj->ir, new_intensity, objs, kdt, depth + 1);
             } else {
-                Vec3 n_dir = 2 * normal * (normal * -l.dir) - (-l.dir);
-                russian_rolette({p, n_dir}, ir, new_intensity, objs, kdt);
+                Vec3 n_dir = l.dir - 2 * n * (n * l.dir);
+                russian_rolette({p, n_dir}, ir, new_intensity, objs, kdt, depth + 1);
             }
         } else { // absorcao
-            kdt.push_back({p, l.dir, intensity});
+            kdt.push_back({p, l.dir.normalize(), intensity});
         }
     }
 }
@@ -80,13 +83,13 @@ KDTree emit_photons(const Point3 &p, int num, double power, const std::vector<Ob
             l.dir = {r.gen(), r.gen(), r.gen()};
         while (l.dir.length_sq() > 1);
 
-        russian_rolette(l, 1, intensity, objs, kdt);
+        russian_rolette(l, 1, intensity, objs, kdt, 0);
     }
 
     return kdt;
 }
 
-void visualize_photomap(const Camera &cam, const std::vector<Object*> &objs, const KDTree &kdt) {
+void visualize_radiance(const Camera &cam, const std::vector<Object*> &objs, const KDTree &kdt) {
     for (int i = 0; i < cam.vres; ++i)
         for (int j = 0; j < cam.hres; ++j) {
             Line l{cam.origin, cam.pixel_ray(i, j)};
@@ -98,7 +101,7 @@ void visualize_photomap(const Camera &cam, const std::vector<Object*> &objs, con
                     inter = temp;
             }
 
-            cam.grid[i][j] = inter ? kdt.get_intensity(l.t(inter.t), 0.2) : Color(0);
+            cam.grid[i][j] = inter ? kdt.get_intensity(l.t(inter.t), inter.normal.normalize(), 0.2) : Color(0);
         }
 }
 
@@ -113,11 +116,11 @@ void starfield_projection(const Camera &cam, const KDTree &photons) {
 
         if (inter && l.dir * cam.oa < 0) {
             Vec3 v = l.t(inter.t) - p_i;
-            int x = round(v * cam.desl_v / cam.desl_v.length_sq());
-            int y = round(v * cam.desl_h / cam.desl_h.length_sq());
+            int x = round(v * cam.desl_h / cam.desl_h.length_sq());
+            int y = round(v * cam.desl_v / cam.desl_v.length_sq());
 
             if (0 <= x && x < cam.hres && 0 <= y && y < cam.vres)
-                cam.grid[x][y] = 255;
+                cam.grid[x][y] = 1e6;
         }
     }
 }

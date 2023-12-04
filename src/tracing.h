@@ -53,26 +53,28 @@ struct Camera {
     }
 
     void print() const {
-        double max_v = 0;
+        double max_v = 3e3;
         std::ofstream outFile(path);
         outFile << "P3\n" << hres << " " << vres << "\n255\n";
 
-        for (const auto &vs : grid)
-            for (const auto &v : vs)
-                max_v = std::max({max_v, v.R, v.G, v.B});
+        // for (const auto &vs : grid)
+        //     for (const auto &v : vs)
+        //         max_v = std::max({max_v, v.R, v.G, v.B});
 
         for (int j = 0; j < hres; ++j)
             for (int i = 0; i < vres; ++i)
-                outFile << int(255 * grid[i][j].R / max_v) << " "
-                        << int(255 * grid[i][j].G / max_v) << " "
-                        << int(255 * grid[i][j].B / max_v) << std::endl;
+                outFile << std::clamp(int(255 * grid[i][j].R / max_v), 0, 255) << " "
+                        << std::clamp(int(255 * grid[i][j].G / max_v), 0, 255) << " "
+                        << std::clamp(int(255 * grid[i][j].B / max_v), 0, 255) << std::endl;
 
         outFile.close();
     }
 };
 
-extern void raycast(const Camera &cam, const std::vector<Object*> &objs);
+extern void simplecast(const Camera &cam, const std::vector<Object*> &objs);
 extern KDTree emit_photons(const Point3 &p, int num, double power,
                            const std::vector<Object*> &objs);
 extern void starfield_projection(const Camera &cam, const KDTree &kdt);
-extern void visualize_photomap(const Camera &cam, const std::vector<Object*> &objs, const KDTree &kdt);
+extern void visualize_radiance(const Camera &cam, const std::vector<Object*> &objs, const KDTree &kdt);
+
+extern void raycast(const Camera &cam, const std::vector<Object*> &objs, const KDTree &kdt);

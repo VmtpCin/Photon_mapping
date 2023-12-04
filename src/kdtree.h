@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <vector>
 
+constexpr double k_kdtree = 1;
+
 struct KDTree : std::vector<Photon> {
 private:
     template <int depth>
@@ -21,7 +23,7 @@ private:
         sort<(depth + 1) % 3>(b, middle);
         sort<(depth + 1) % 3>(middle + 1, e);
     }
-    
+
     template <int depth>
     void find_all_near(const Point3 &p, double r_sq, size_t b, size_t e, KDTree &kdt) const {
         if (b == e)
@@ -49,7 +51,7 @@ private:
     }
 
     template <int depth>
-    Color get_intensity(const Point3 &p, double r_sq, size_t b, size_t e) const {
+    Color get_intensity(const Point3 &p, const Vec3 &n, double r_sq, size_t b, size_t e) const {
         if (b == e)
             return 0;
 
@@ -58,20 +60,20 @@ private:
         const Point3 &cur_p = (*this)[m].point;
 
         if (p.distance_sq(cur_p) <= r_sq)
-            intensity += (*this)[m].I;
+            intensity += (*this)[m].I * std::abs(n * (*this)[m].dir); // * (1 - sqrt(p.distance_sq(cur_p)/(k_kdtree * r_sq)));
 
         const double dist = p[depth] - cur_p[depth];
 
         if (dist < 0) {
-            intensity += get_intensity<(depth + 1) % 3>(p, r_sq, b, m);
+            intensity += get_intensity<(depth + 1) % 3>(p, n, r_sq, b, m);
 
             if (dist * dist <= r_sq)
-                intensity += get_intensity<(depth + 1) % 3>(p, r_sq, m + 1, e);
+                intensity += get_intensity<(depth + 1) % 3>(p, n, r_sq, m + 1, e);
         } else {
-            intensity += get_intensity<(depth + 1) % 3>(p, r_sq, m + 1, e);
+            intensity += get_intensity<(depth + 1) % 3>(p, n, r_sq, m + 1, e);
 
             if (dist * dist <= r_sq)
-                intensity += get_intensity<(depth + 1) % 3>(p, r_sq, b, m);
+                intensity += get_intensity<(depth + 1) % 3>(p, n, r_sq, b, m);
         }
 
         return intensity;
@@ -86,7 +88,7 @@ public:
         return photons;
     }
 
-    Color get_intensity(const Point3 &p, double radius) const {
-        return get_intensity<0>(p, radius * radius, 0, size());
+    Color get_intensity(const Point3 &p, const Vec3 &n, double radius) const {
+        return get_intensity<0>(p, n, radius * radius, 0, size()) / (M_PI * radius * radius);
     }
 };

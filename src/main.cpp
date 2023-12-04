@@ -16,24 +16,29 @@ int main() {
     clock_t start_time = clock();
 
     vector<Object*> objects;
-    double trans[] = {0, 0, 0};
+    double trans[] = {0, 0, 1};
+    double reflx[] = {0, 1, 0};
     double opaco[] = {1, 0, 0};
 
-    objects.push_back(new Object(new Sphere({3, 0, 0}, 0.5), trans, 0.0, {0, 1, 0}));
-    objects.push_back(new Object(new Plane({0, -1, 0}, {0, 1, 0}), opaco, 0.0, {0, 1, 0}));
+    objects.push_back(new Object(new Parallelogram({0, -1, -1}, {4, -1, -1}, {0,  1, -1}), opaco, {1, 0, 0})); // right
+    objects.push_back(new Object(new Parallelogram({0, -1,  1}, {4, -1,  1}, {0,  1,  1}), opaco, {0, 1, 0})); // left
+    objects.push_back(new Object(new Parallelogram({4, -1, -1}, {4, -1,  1}, {4,  1, -1}))); // back
+    objects.push_back(new Object(new Parallelogram({0, -1, -1}, {4, -1, -1}, {0, -1,  1}))); // down
+    objects.push_back(new Object(new Parallelogram({0,  1, -1}, {4,  1, -1}, {0,  1,  1}))); // up
 
-    // objects.push_back(new Object(new Bounding_Box({3, -0.5, -0.5}, {4, -1.5, -1.5})));
-    // objects.push_back(new Object(new Triangle({4, 0, 0}, {5, 0, 1}, {5, 1, 0})));
+    objects.push_back(new Object(new Sphere({3, -0.6,  0.5}, 0.4), reflx));
+    objects.push_back(new Object(new Sphere({2.5, -0.6, -0.5}, 0.4), trans, 3));
 
     const Camera cam({-1, 0, 0}, {1, 0, 0}, {0, 1, 0}, 500, 500, 0.5, 0.5);
 
-    // raycast(cam, objects);
+    simplecast(cam, objects);
 
-    KDTree kdt = emit_photons({2, 3, 3}, 1e6, 1e6, objects);
+    KDTree kdt = emit_photons({2.5, 0.75, 0}, 1e6, 1e5, objects);
     kdt.sort();
 
     // starfield_projection(cam, kdt);
-    visualize_photomap(cam, objects, kdt);
+    // visualize_radiance(cam, objects, kdt);
+    raycast(cam, objects, kdt);
 
     cam.print();
 
