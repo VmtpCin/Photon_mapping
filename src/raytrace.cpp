@@ -1,6 +1,8 @@
 #include "tracing.h"
 #include "geometry.h"
+#include <atomic>
 #include <iostream>
+#include <thread>
 
 void simplecast(const Camera &cam, const std::vector<Object*> &objs) {
     for (int i = 0; i < cam.vres; ++i)
@@ -84,4 +86,32 @@ void raycast(const Camera &cam, const std::vector<Object*> &objs, const KDTree &
     for (int i = 0; i < cam.vres; ++i)
         for (int j = 0; j < cam.hres; ++j)
             cam.grid[i][j] = castray({cam.origin, cam.pixel_ray(i, j)}, objs, kdt, 0);
+}
+
+std::atomic_int32_t it_i;
+std::vector<std::vector<Color>> th_rc_aux; 
+
+void raycast_th_aux(const Camera &cam, const std::vector<Object*> &objs, const KDTree &kdt) {
+    int i;
+    while((i = it_i.fetch_add(1, std::memory_order_acq_rel)) < cam.vres)
+        for (int j = 0; j < cam.hres; ++j)
+            th_rc_aux[i][j] = castray({cam.origin, cam.pixel_ray(i, j)}, objs, kdt, 0);
+}
+
+void raycast_th(const Camera &cam, const std::vector<Object*> &objs, const KDTree &kdt, int threads) {
+    std::thread th[threads - 1];
+
+    th_rc_aux.swap(cam.grid);
+
+    it_i.store(0, std::memory_order_release);
+
+    for (auto &t: th)
+        t = std::thread(raycast_th_aux, cam, objs, kdt);
+
+    raycast_th_aux(cam, objs, kdt);
+
+    for (auto &t : th)
+        t.join();
+
+    th_rc_aux.swap(cam.grid);
 }

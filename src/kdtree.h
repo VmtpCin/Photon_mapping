@@ -80,7 +80,7 @@ private:
     }
 
 public:
-    void sort() { return sort<0>(0, size()); }
+    void sort() { shrink_to_fit(); return sort<0>(0, size()); }
 
     KDTree find_all_near(const Point3 &p, double radius) const {
         KDTree photons;

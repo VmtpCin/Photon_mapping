@@ -74,7 +74,11 @@ struct Camera {
 extern void simplecast(const Camera &cam, const std::vector<Object*> &objs);
 extern KDTree emit_photons(const Point3 &p, int num, double power,
                            const std::vector<Object*> &objs);
+extern KDTree emit_photons_th(const Point3 &p, int num, double power,
+                              const std::vector<Object*> &objs, int threads);
+
 extern void starfield_projection(const Camera &cam, const KDTree &kdt);
 extern void visualize_radiance(const Camera &cam, const std::vector<Object*> &objs, const KDTree &kdt);
 
 extern void raycast(const Camera &cam, const std::vector<Object*> &objs, const KDTree &kdt);
+extern void raycast_th(const Camera &cam, const std::vector<Object*> &objs, const KDTree &kdt, int threads);

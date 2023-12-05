@@ -1,6 +1,9 @@
 #include "tracing.h"
 #include "kdtree.h"
 #include "geometry.h"
+#include <mutex>
+#include <atomic>
+#include <thread>
 
 void russian_rolette(const Line &l, double ir, Color intensity,
                      const std::vector<Object*> &objs, KDTree &kdt, int depth) {
@@ -83,27 +86,12 @@ KDTree emit_photons(const Point3 &p, int num, double power, const std::vector<Ob
             l.dir = {r.gen(), r.gen(), r.gen()};
         while (l.dir.length_sq() > 1);
 
-        russian_rolette(l, 1, intensity, objs, kdt, 0);
+        russian_rolette(l, 1.0, intensity, objs, kdt, 0);
     }
 
     return kdt;
 }
 
-void visualize_radiance(const Camera &cam, const std::vector<Object*> &objs, const KDTree &kdt) {
-    for (int i = 0; i < cam.vres; ++i)
-        for (int j = 0; j < cam.hres; ++j) {
-            Line l{cam.origin, cam.pixel_ray(i, j)};
-            Intersection inter;
-
-            for (const auto &obj : objs) {
-                auto temp = obj->intersect(l);
-                if (temp < inter)
-                    inter = temp;
-            }
-
-            cam.grid[i][j] = inter ? kdt.get_intensity(l.t(inter.t), inter.normal.normalize(), 0.2) : Color(0);
-        }
-}
 
 void starfield_projection(const Camera &cam, const KDTree &photons) {
     Plane pl_proj(cam.vec_initial + cam.origin, cam.oa);
@@ -123,4 +111,63 @@ void starfield_projection(const Camera &cam, const KDTree &photons) {
                 cam.grid[x][y] = 1e6;
         }
     }
+}
+
+void visualize_radiance(const Camera &cam, const std::vector<Object*> &objs, const KDTree &kdt) {
+    for (int i = 0; i < cam.vres; ++i)
+        for (int j = 0; j < cam.hres; ++j) {
+            Line l{cam.origin, cam.pixel_ray(i, j)};
+            Intersection inter;
+
+            for (const auto &obj : objs) {
+                auto temp = obj->intersect(l);
+                if (temp < inter)
+                    inter = temp;
+            }
+
+            cam.grid[i][j] = inter ? kdt.get_intensity(l.t(inter.t), inter.normal.normalize(), 0.2) : Color(0);
+        }
+}
+
+std::atomic_int32_t th_cnt;
+std::vector<KDTree> th_kdts;
+
+void emit_photons_th_aux(const Point3 &p, int num, Color intensity, const std::vector<Object*> &objs, int idx) {
+    Line l;
+    l.origin = p;
+    Rand r(-1, 1);
+
+    while (th_cnt.fetch_add(1, std::memory_order_acq_rel) < num) {
+        do
+            l.dir = {r.gen(), r.gen(), r.gen()};
+        while (l.dir.length_sq() > 1);
+
+        russian_rolette(l, 1.0, intensity, objs, th_kdts[idx], 0);
+    }
+}
+
+KDTree emit_photons_th(const Point3 &p, int num, double power, const std::vector<Object*> &objs, int threads) {
+    KDTree kdt;
+    std::thread th[threads - 1];
+    Color intensity = power / num;
+
+    th_kdts.assign(threads, KDTree());
+    th_cnt.store(0, std::memory_order_release);
+
+    for (int i = 0; i < threads - 1; ++i)
+        th[i] = std::thread(emit_photons_th_aux, p, num, intensity, objs, i);
+
+    emit_photons_th_aux(p, num, intensity, objs, threads - 1);
+
+    for (auto &t : th)
+        t.join();
+
+    for (int i = 0; i < threads; ++i) {
+        kdt.insert(kdt.end(), th_kdts[i].begin(), th_kdts[i].end());
+        th_kdts[i].clear();
+    }
+
+    th_kdts.clear();
+
+    return kdt;
 }

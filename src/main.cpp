@@ -16,7 +16,7 @@ int main() {
     clock_t start_time = clock();
 
     vector<Object*> objects;
-    double trans[] = {0, 0, 1};
+    double trans[] = {0, 0.15, 0.8};
     double reflx[] = {0, 1, 0};
     double opaco[] = {1, 0, 0};
 
@@ -31,14 +31,13 @@ int main() {
 
     const Camera cam({-1, 0, 0}, {1, 0, 0}, {0, 1, 0}, 500, 500, 0.5, 0.5);
 
-    simplecast(cam, objects);
-
-    KDTree kdt = emit_photons({2.5, 0.75, 0}, 1e6, 1e5, objects);
+    KDTree kdt = emit_photons_th({2.5, 0.75, 0}, 1e6, 1e5, objects, 12);
     kdt.sort();
 
     // starfield_projection(cam, kdt);
     // visualize_radiance(cam, objects, kdt);
-    raycast(cam, objects, kdt);
+    // raycast(cam, objects, kdt);
+    raycast_th(cam, objects, kdt, 12);
 
     cam.print();
 
