@@ -7,7 +7,7 @@
 void simplecast(const Camera &cam, const std::vector<Object*> &objs) {
     for (int i = 0; i < cam.vres; ++i)
         for (int j = 0; j < cam.hres; ++j) {
-            Line l{cam.origin, cam.pixel_ray(i, j)};
+            Line l{cam.origin, cam.pixel_ray(i, j).normalize()};
             Intersection inter;
             Object *obj;
 
@@ -53,8 +53,7 @@ Color castray(const Line &l, const std::vector<Object*> &objs, const KDTree &kdt
 
         if (obj->rr[2] > 0) {
             Vec3 n = normal.normalize();
-            Vec3 dir = l.dir.normalize();
-            double cosI = -dir * n;
+            double cosI = -l.dir * n;
             double eta = 1.0/obj->ir;
 
             if (cosI < 0) {
@@ -66,10 +65,10 @@ Color castray(const Line &l, const std::vector<Object*> &objs, const KDTree &kdt
             double temp = 1 - (eta * eta) * (1 - cosI * cosI);
 
             if (temp > 0) {
-                Vec3 n_dir = eta * dir - (sqrt(temp) - cosI * eta) * n;
+                Vec3 n_dir = eta * l.dir - (sqrt(temp) - cosI * eta) * n;
                 result += obj->rr[2] * castray({p, n_dir}, objs, kdt, depth + 1);
             } else {
-                Vec3 n_dir = dir - 2 * n * (n * dir);
+                Vec3 n_dir = l.dir - 2 * n * (n * l.dir);
                 result += obj->rr[2] * castray({p, n_dir}, objs, kdt, depth + 1);
             }
         }
@@ -95,7 +94,7 @@ void raycast_th_aux(const Camera &cam, const std::vector<Object*> &objs, const K
     int i;
     while((i = it_i.fetch_add(1, std::memory_order_acq_rel)) < cam.vres)
         for (int j = 0; j < cam.hres; ++j)
-            th_rc_aux[i][j] = castray({cam.origin, cam.pixel_ray(i, j)}, objs, kdt, 0);
+            th_rc_aux[i][j] = castray({cam.origin, cam.pixel_ray(i, j).normalize()}, objs, kdt, 0);
 }
 
 void raycast_th(const Camera &cam, const std::vector<Object*> &objs, const KDTree &kdt, int threads) {

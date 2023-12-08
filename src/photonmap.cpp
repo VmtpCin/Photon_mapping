@@ -7,7 +7,7 @@
 
 void russian_rolette(const Line &l, double ir, Color intensity,
                      const std::vector<Object*> &objs, KDTree &kdt, int depth) {
-    if (depth > 5)
+    if (depth > 5 || !intensity.not_empty())
         return;
 
     Intersection inter;
@@ -40,7 +40,7 @@ void russian_rolette(const Line &l, double ir, Color intensity,
  
             Line n_l({p, n_dir});
 
-            kdt.push_back({p, l.dir.normalize(), new_intensity / 2});
+            kdt.push_back({p, l.dir, new_intensity / 2});
 
             russian_rolette(n_l, ir, new_intensity / 2, objs, kdt, depth + 1);
         } else if (dice < obj->rr[0] + obj->rr[1]) { // reflexao
@@ -48,8 +48,7 @@ void russian_rolette(const Line &l, double ir, Color intensity,
             russian_rolette({p, n_dir}, ir, new_intensity, objs, kdt, depth + 1);
         } else if (dice < obj->rr[0] + obj->rr[1] + obj->rr[2]) { // refracao
             Vec3 n = normal.normalize();
-            Vec3 dir = l.dir.normalize();
-            double cosI = -dir * n;
+            double cosI = -l.dir * n;
             double eta = 1/obj->ir;
 
             if (cosI < 0) {
@@ -61,14 +60,14 @@ void russian_rolette(const Line &l, double ir, Color intensity,
             double temp = 1 - (eta * eta) * (1 - cosI * cosI);
 
             if (temp > 0) {
-                Vec3 n_dir = eta * dir - (sqrt(temp) - cosI * eta) * n;
+                Vec3 n_dir = eta * l.dir - (sqrt(temp) - cosI * eta) * n;
                 russian_rolette({p, n_dir}, obj->ir, new_intensity, objs, kdt, depth + 1);
             } else {
-                Vec3 n_dir = dir - 2 * n * (n * dir);
+                Vec3 n_dir = l.dir - 2 * n * (n * l.dir);
                 russian_rolette({p, n_dir}, ir, new_intensity, objs, kdt, depth + 1);
             }
         } else { // absorcao
-            kdt.push_back({p, l.dir.normalize(), intensity});
+            kdt.push_back({p, l.dir, intensity});
         }
     }
 }
@@ -85,6 +84,8 @@ KDTree emit_photons(const Point3 &p, int num, double power, const std::vector<Ob
         do
             l.dir = {r.gen(), r.gen(), r.gen()};
         while (l.dir.length_sq() > 1);
+
+        l.dir = l.dir.normalize();
 
         russian_rolette(l, 1.0, intensity, objs, kdt, 0);
     }
@@ -141,6 +142,8 @@ void emit_photons_th_aux(const Point3 &p, int num, Color intensity, const std::v
         do
             l.dir = {r.gen(), r.gen(), r.gen()};
         while (l.dir.length_sq() > 1);
+
+        l.dir = l.dir.normalize();
 
         russian_rolette(l, 1.0, intensity, objs, th_kdts[idx], 0);
     }

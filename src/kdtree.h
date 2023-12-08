@@ -59,8 +59,11 @@ private:
         const size_t m = (b + e) / 2;
         const Point3 &cur_p = (*this)[m].point;
 
-        if (p.distance_sq(cur_p) <= r_sq)
-            intensity += (*this)[m].I * std::abs(n * (*this)[m].dir); // * (1 - sqrt(p.distance_sq(cur_p)/(k_kdtree * r_sq)));
+        if (p.distance_sq(cur_p) <= r_sq) {
+            const double d = -(n * ((*this)[m].dir));
+            if (d > 0)  
+                intensity += (*this)[m].I * d; // * (1 - sqrt(p.distance_sq(cur_p)/(k_kdtree * r_sq))) * (1 - std::abs(((*this)[m].point - p).normalize() * n));
+        }
 
         const double dist = p[depth] - cur_p[depth];
 
@@ -89,6 +92,6 @@ public:
     }
 
     Color get_intensity(const Point3 &p, const Vec3 &n, double radius) const {
-        return get_intensity<0>(p, n, radius * radius, 0, size()) / (M_PI * radius * radius);
+        return get_intensity<0>(p, n.normalize(), radius * radius, 0, size()) / (M_PI * radius * radius);
     }
 };

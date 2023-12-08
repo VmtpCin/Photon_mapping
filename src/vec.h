@@ -210,6 +210,10 @@ struct Color {
         R /= d, G /= d, B /= d;
         return *this;
     }
+
+    bool not_empty() const {
+        return R > 1e-10 || G > 1e-10 || B > 1e-10;
+    }
 };
 
 struct Photon {

@@ -49,11 +49,13 @@ struct Camera {
     }
 
     Vec3 pixel_ray(int i, int j) const {
-        return vec_initial + i * desl_h + j * desl_v;
+        Vec3 h = (2 * tamx * i) * (oa ^ up) / (hres - 1);
+        Vec3 v = (2 * tamy * j) *    up     / (vres - 1);
+        return vec_initial + h + v;
     }
 
     void print() const {
-        double max_v = 3e3;
+        constexpr double max_v = 1;
         std::ofstream outFile(path);
         outFile << "P3\n" << hres << " " << vres << "\n255\n";
 

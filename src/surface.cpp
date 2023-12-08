@@ -43,7 +43,7 @@ Point3 bezier_triangle(double s, double t) {
 
 std::vector<Point3> create_surface_triangle(Point3 (*f)(double, double),
                     int s_step, int t_step, std::vector<Object*> &objs) {
-    std::vector<Point3> curve;
+    std::vector<Point3> prev_curve, curve;
 
     for (int it_s = 0; it_s <= s_step; ++it_s) {
         for (int it_t = 0; it_t <= t_step; ++it_t) {
@@ -55,6 +55,15 @@ std::vector<Point3> create_surface_triangle(Point3 (*f)(double, double),
 
             curve.push_back(f(s, t));
         }
+
+        const double trans[3] = {0, 0.2, 0.8};
+        for (int i = 0; i + 1 < prev_curve.size(); ++i) {
+            objs.push_back(new Object(new Triangle(prev_curve[i],          curve[i], curve[i + 1]), trans, 1.3));
+            objs.push_back(new Object(new Triangle(prev_curve[i], prev_curve[i + 1], curve[i + 1]), trans, 1.3));
+        }
+
+        prev_curve.swap(curve);
+        curve.clear();
     }
 
     return curve;
@@ -62,7 +71,7 @@ std::vector<Point3> create_surface_triangle(Point3 (*f)(double, double),
 
 std::vector<Point3> create_bezier_superfice(const std::vector<std::vector<Point3>> &control,
                                             int s_step, int t_step, std::vector<Object*> &objs) {
-    std::vector<Point3> curve;
+    std::vector<Point3> prev_curve, curve;
 
     for (int it_s; it_s <= s_step; ++it_s) {
         std::vector<Point3> next_it;
@@ -73,6 +82,15 @@ std::vector<Point3> create_bezier_superfice(const std::vector<std::vector<Point3
 
         for (int it_t = 0; it_t <= t_step; ++it_t)
             curve.push_back(bezier_curve(next_it, double(it_t) / t_step));
+
+        const double trans[3] = {0, 0.2, 0.8};
+        for (int i = 0; i + 1 < prev_curve.size(); ++i) {
+            objs.push_back(new Object(new Triangle(prev_curve[i],          curve[i], curve[i + 1]), trans, 1.3));
+            objs.push_back(new Object(new Triangle(prev_curve[i], prev_curve[i + 1], curve[i + 1]), trans, 1.3));
+        }
+
+        prev_curve.swap(curve);
+        curve.clear();
     }
 
     return curve;
