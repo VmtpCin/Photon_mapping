@@ -216,12 +216,6 @@ struct Color {
     }
 };
 
-struct Photon {
-    Point3 point;
-    Vec3 dir;
-    Color I;
-};
-
 inline Point3 operator+(const Vec3& v, const Point3 &p) {
     return p + v;
 }

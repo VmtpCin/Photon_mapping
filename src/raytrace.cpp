@@ -75,7 +75,7 @@ Color castray(const Line &l, const std::vector<Object*> &objs, const KDTree &kdt
 
         if (obj->rr[1] + obj->rr[2] < 1)
             result += (1 - (obj->rr[1] + obj->rr[2]))
-                    * kdt.get_intensity(l.t(inter.t), inter.normal.normalize(), 0.15);
+                    * kdt.get_intensity(l.t(inter.t), obj, inter.normal.normalize(), 0.15);
     }
 
     return result;

@@ -1,9 +1,17 @@
 #pragma once
 #include "vec.h"
+#include "geometry.h"
 #include <algorithm>
 #include <vector>
 
 constexpr double k_kdtree = 1;
+
+struct Photon {
+    Point3 point;
+    Object *obj;
+    Vec3 dir;
+    Color I;
+};
 
 struct KDTree : std::vector<Photon> {
 private:
@@ -25,7 +33,7 @@ private:
     }
 
     template <int depth>
-    void find_all_near(const Point3 &p, double r_sq, size_t b, size_t e, KDTree &kdt) const {
+    void find_all_near(const Point3 &p, const Object *obj, double r_sq, size_t b, size_t e, KDTree &kdt) const {
         if (b == e)
             return;
 
@@ -38,20 +46,20 @@ private:
         const double dist = p[depth] - cur_p[depth];
 
         if (dist < 0) {
-            find_all_near<(depth + 1) % 3>(p, r_sq, b, m, kdt);
+            find_all_near<(depth + 1) % 3>(p, obj, r_sq, b, m, kdt);
 
             if (dist * dist <= r_sq)
-                find_all_near<(depth + 1) % 3>(p, r_sq, m + 1, e, kdt);
+                find_all_near<(depth + 1) % 3>(p, obj, r_sq, m + 1, e, kdt);
         } else {
-            find_all_near<(depth + 1) % 3>(p, r_sq, m + 1, e, kdt);
+            find_all_near<(depth + 1) % 3>(p, obj, r_sq, m + 1, e, kdt);
 
             if (dist * dist <= r_sq)
-                find_all_near<(depth + 1) % 3>(p, r_sq, b, m, kdt);
+                find_all_near<(depth + 1) % 3>(p, obj, r_sq, b, m, kdt);
         }
     }
 
     template <int depth>
-    Color get_intensity(const Point3 &p, const Vec3 &n, double r_sq, size_t b, size_t e) const {
+    Color get_intensity(const Point3 &p, const Object *obj, const Vec3 &n, double r_sq, size_t b, size_t e) const {
         if (b == e)
             return 0;
 
@@ -61,22 +69,22 @@ private:
 
         if (p.distance_sq(cur_p) <= r_sq) {
             const double d = -(n * ((*this)[m].dir));
-            if (d > 0)  
-                intensity += (*this)[m].I * d; // * (1 - sqrt(p.distance_sq(cur_p)/(k_kdtree * r_sq))) * (1 - std::abs(((*this)[m].point - p).normalize() * n));
+            if ((*this)[m].obj == obj && d > 0)  
+                intensity += (*this)[m].I * d * (1 - sqrt(p.distance_sq(cur_p)/(k_kdtree * r_sq)));
         }
 
         const double dist = p[depth] - cur_p[depth];
 
         if (dist < 0) {
-            intensity += get_intensity<(depth + 1) % 3>(p, n, r_sq, b, m);
+            intensity += get_intensity<(depth + 1) % 3>(p, obj, n, r_sq, b, m);
 
             if (dist * dist <= r_sq)
-                intensity += get_intensity<(depth + 1) % 3>(p, n, r_sq, m + 1, e);
+                intensity += get_intensity<(depth + 1) % 3>(p, obj, n, r_sq, m + 1, e);
         } else {
-            intensity += get_intensity<(depth + 1) % 3>(p, n, r_sq, m + 1, e);
+            intensity += get_intensity<(depth + 1) % 3>(p, obj, n, r_sq, m + 1, e);
 
             if (dist * dist <= r_sq)
-                intensity += get_intensity<(depth + 1) % 3>(p, n, r_sq, b, m);
+                intensity += get_intensity<(depth + 1) % 3>(p, obj, n, r_sq, b, m);
         }
 
         return intensity;
@@ -85,13 +93,13 @@ private:
 public:
     void sort() { shrink_to_fit(); return sort<0>(0, size()); }
 
-    KDTree find_all_near(const Point3 &p, double radius) const {
+    KDTree find_all_near(const Point3 &p, const Object *obj, double radius) const {
         KDTree photons;
-        find_all_near<0>(p, radius * radius, 0, size(), photons);
+        find_all_near<0>(p, obj, radius * radius, 0, size(), photons);
         return photons;
     }
 
-    Color get_intensity(const Point3 &p, const Vec3 &n, double radius) const {
-        return get_intensity<0>(p, n.normalize(), radius * radius, 0, size()) / (M_PI * radius * radius);
+    Color get_intensity(const Point3 &p, const Object *obj, const Vec3 &n, double radius) const {
+        return 3 * get_intensity<0>(p, obj, n.normalize(), radius * radius, 0, size()) / (M_PI * radius * radius);
     }
 };

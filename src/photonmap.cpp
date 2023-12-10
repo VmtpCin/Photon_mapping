@@ -40,7 +40,7 @@ void russian_rolette(const Line &l, double ir, Color intensity,
  
             Line n_l({p, n_dir});
 
-            kdt.push_back({p, l.dir, new_intensity / 2});
+            kdt.push_back({p, obj, l.dir, new_intensity / 2});
 
             russian_rolette(n_l, ir, new_intensity / 2, objs, kdt, depth + 1);
         } else if (dice < obj->rr[0] + obj->rr[1]) { // reflexao
@@ -67,7 +67,7 @@ void russian_rolette(const Line &l, double ir, Color intensity,
                 russian_rolette({p, n_dir}, ir, new_intensity, objs, kdt, depth + 1);
             }
         } else { // absorcao
-            kdt.push_back({p, l.dir, intensity});
+            kdt.push_back({p, obj, l.dir, intensity});
         }
     }
 }
@@ -109,7 +109,7 @@ void starfield_projection(const Camera &cam, const KDTree &photons) {
             int y = round(v * cam.desl_v / cam.desl_v.length_sq());
 
             if (0 <= x && x < cam.hres && 0 <= y && y < cam.vres)
-                cam.grid[x][y] = 1e6;
+                cam.grid[x][y] += 3000 * photon.I;
         }
     }
 }
@@ -119,14 +119,15 @@ void visualize_radiance(const Camera &cam, const std::vector<Object*> &objs, con
         for (int j = 0; j < cam.hres; ++j) {
             Line l{cam.origin, cam.pixel_ray(i, j)};
             Intersection inter;
+            Object *obj;
 
-            for (const auto &obj : objs) {
-                auto temp = obj->intersect(l);
+            for (const auto &o : objs) {
+                auto temp = o->intersect(l);
                 if (temp < inter)
-                    inter = temp;
+                    inter = temp, obj = o;
             }
 
-            cam.grid[i][j] = inter ? kdt.get_intensity(l.t(inter.t), inter.normal.normalize(), 0.2) : Color(0);
+            cam.grid[i][j] = inter ? kdt.get_intensity(l.t(inter.t), obj, inter.normal.normalize(), 0.2) : Color(0);
         }
 }
 

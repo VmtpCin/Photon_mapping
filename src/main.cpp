@@ -26,17 +26,15 @@ int main() {
     objects.push_back(new Object(new Parallelogram({0, -1, -1}, {4, -1, -1}, {0, -1,  1}), opaco)); // down
     objects.push_back(new Object(new Parallelogram({0,  1, -1}, {4,  1, -1}, {0,  1,  1}), opaco)); // up
 
-    // objects.push_back(new Object(new Sphere({3, -0.6,  0.5}, 0.4), reflx));
-    // objects.push_back(new Object(new Sphere({2.5, -0.6, -0.5}, 0.4), trans, 3));
+    objects.push_back(new Object(new Sphere({3, -0.6,  0.5}, 0.4), reflx));
+    objects.push_back(new Object(new Sphere({2.5, -0.6, -0.5}, 0.4), trans, 3));
 
     // std::vector<std::vector<Point3>> bezier_control;
     // bezier_control.push_back(std::vector<Point3>({{1.5, -1, -1}, {2, 0.5, -1}, {2.5, -1, -1}, {3, 1, -1}}));
     // bezier_control.push_back(std::vector<Point3>({{1.5, -1,  1}, {2, 0.5,  1}, {2.5, -1,  1}, {3, 1, 1}}));
+    // create_bezier_superfice(bezier_control, 100, 1, objects);
     // objects.push_back(new Object(new Sphere({2, 0.3, 0}, 0.2), opaco, {1, 1, 0}));
     // objects.push_back(new Object(new Sphere({3.4, -0.6, 0}, 0.4), opaco, {1, 0, 1}));
-
-    // create_bezier_superfice(bezier_control, 100, 1, objects);
-    // printf("%zu\n", objects.size());
 
     const Camera cam({-1, 0, 0}, {1, 0, 0}, {0, 1, 0}, 500, 500, 0.5, 0.5);
 
@@ -45,10 +43,10 @@ int main() {
 
     // simplecast(cam, objects);
 
-    // starfield_projection(cam, kdt);
+    starfield_projection(cam, kdt);
     // visualize_radiance(cam, objects, kdt);
     // raycast(cam, objects, kdt);
-    raycast_th(cam, objects, kdt, 12);
+    // raycast_th(cam, objects, kdt, 12);
 
     cam.print();
 
