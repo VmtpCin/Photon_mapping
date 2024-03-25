@@ -8,7 +8,7 @@ constexpr double k_kdtree = 1;
 
 struct Photon {
     Point3 point;
-    Object *obj;
+    const Object *obj;
     Vec3 dir;
     Color I;
 };

@@ -26,19 +26,20 @@ struct Geometry {
 
 struct Object : Geometry {
     Geometry *geometry;
-    double rr[3] = {0, 0, 0}, ir = 1;
+    double rr[3] = {0, 0, 0};
+    double (*ir)(double);
     Color color = 1;
 
-    ~Object() { delete geometry; }
+    // ~Object() { if (geometry) delete geometry; }
 
     Object(Geometry *geo) : geometry(geo) {}
     Object(Geometry *geo, const double t_rr[3])
             : geometry(geo), rr{t_rr[0], t_rr[1], t_rr[2]} {}
     Object(Geometry *geo, const double t_rr[3], Color c)
             : geometry(geo), rr{t_rr[0], t_rr[1], t_rr[2]}, color(c) {}
-    Object(Geometry *geo, const double t_rr[3], double t_ir)
+    Object(Geometry *geo, const double t_rr[3], double (*t_ir)(double))
             : geometry(geo), rr{t_rr[0], t_rr[1], t_rr[2]}, ir(t_ir) {}
-    Object(Geometry *geo, const double t_rr[3], double t_ir, Color c)
+    Object(Geometry *geo, const double t_rr[3], double (*t_ir)(double), Color c)
             : geometry(geo), rr{t_rr[0], t_rr[1], t_rr[2]}, ir(t_ir), color(c) {}
 
     Intersection intersect(const Line &l) const override { return geometry->intersect(l); };

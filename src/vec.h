@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <math.h>
@@ -183,6 +184,10 @@ struct Color {
         return {R + c.R, G + c.G, B + c.B};
     }
 
+    Color operator-(const Color &c) const {
+        return {R - c.R, G - c.G, B - c.B};
+    }
+
     Color operator*(const double d) const {
         return {R * d, G * d, B * d};
     }
@@ -214,6 +219,32 @@ struct Color {
     bool not_empty() const {
         return R > 1e-10 || G > 1e-10 || B > 1e-10;
     }
+
+    double to_wavelength() const {
+        double cm = std::max({R, G, B});
+        double rd = R / cm;
+        double gd = G / cm;
+        double bd = B / cm;
+
+        double cmax = std::max({ rd, gd, bd });
+        double cmin = std::min({ rd, gd, bd });
+        double delta = cmax - cmin;
+        double h;
+
+        if (delta == 0)
+            return 0;
+        else if (cmax == rd)
+            h = 60 * fmod(((gd - bd) / delta), 6);
+        else if (cmax == gd)
+            h = 60 * fmod(((bd - rd) / delta) + 2, 6);
+        else
+            h = 60 * fmod(((rd - gd) / delta) + 4, 6);
+
+        if (h < 0)
+            h += 360;
+
+        return (380 + (h / 360.0) * (750 - 380)) * 1e-3;
+    }
 };
 
 inline Point3 operator+(const Vec3& v, const Point3 &p) {
@@ -230,3 +261,24 @@ inline Color operator*(const double &d, const Color &c) {
 
 extern Point3 interpolate(const Point3 &p1, const Point3 &p2, const Point3 &p3, double s, double t);
 extern Point3 interpolate(const Point3 &p1, const Point3 &p2, double s);
+
+Color to_color(double wavelength) {
+    Color ans;
+    constexpr double gama = 0.8;
+    double factor, intensity;
+
+    if (380 <= wavelength && wavelength < 440)
+        ans = {-(wavelength - 440) / (440 - 380), 0, 1};
+    else if (440 <= wavelength && wavelength < 490)
+        ans = {0, (wavelength - 440) / (490 - 440), 1};
+    else if (490 <= wavelength && wavelength < 510)
+        ans = {0, 1, -(wavelength - 510) / (510 - 490)};
+    else if (510 <= wavelength && wavelength < 580)
+        ans = {(wavelength - 510) / (580 - 510), 1, 0};
+    else if (580 <= wavelength && wavelength < 645)
+        ans = {1, -(wavelength - 645)/(645 - 580), 0};
+    else
+        ans = {0, 0, 0};
+    
+    return ans;
+}

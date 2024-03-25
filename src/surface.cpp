@@ -42,7 +42,7 @@ Point3 bezier_triangle(double s, double t) {
 }
 
 std::vector<Point3> create_surface_triangle(Point3 (*f)(double, double),
-                    int s_step, int t_step, std::vector<Object*> &objs) {
+                    int s_step, int t_step, std::vector<const Object*> &objs) {
     std::vector<Point3> prev_curve, curve;
 
     for (int it_s = 0; it_s <= s_step; ++it_s) {
@@ -70,7 +70,7 @@ std::vector<Point3> create_surface_triangle(Point3 (*f)(double, double),
 }
 
 std::vector<Point3> create_bezier_superfice(const std::vector<std::vector<Point3>> &control,
-                                            int s_step, int t_step, std::vector<Object*> &objs) {
+                                            int s_step, int t_step, std::vector<const Object*> &objs) {
     std::vector<Point3> prev_curve, curve;
 
     for (int it_s; it_s <= s_step; ++it_s) {

@@ -1,3 +1,4 @@
 .vscode/
+opencv/
 *.ppm
 *.exe
