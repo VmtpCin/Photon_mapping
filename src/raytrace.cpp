@@ -89,7 +89,7 @@ Color castray(const Line &l, const std::vector<const Object*> &objs, const KDTre
                     result += obj->rr[2] * castray({p, n_dir}, objs, kdt, ir, wavelength, depth + 1);
                 }
             } else {
-                constexpr int iterations = 100;
+                constexpr int iterations = 10;
                 for (int i = 0; i < iterations; ++i) {
                     double eta;
                     double wl = 380 + 370 * i / (iterations - 1);
@@ -106,13 +106,13 @@ Color castray(const Line &l, const std::vector<const Object*> &objs, const KDTre
                         else ir.pop_back();
 
                         Vec3 n_dir = eta * l.dir - (sqrt(temp) - cosI * eta) * n;
-                        result += 2 * obj->rr[2] * castray({p, n_dir}, objs, kdt, ir, wl, depth + 1) & c / iterations;
+                        result += obj->rr[2] * castray({p, n_dir}, objs, kdt, ir, wl, depth + 1) / iterations;
 
                         if (getting_in) ir.pop_back();
                         else ir.push_back(obj);
                     } else {
                         Vec3 n_dir = l.dir - 2 * n * (n * l.dir);
-                        result += obj->rr[2] * castray({p, n_dir}, objs, kdt, ir, wavelength, depth + 1) & c / iterations;
+                        result += obj->rr[2] * castray({p, n_dir}, objs, kdt, ir, wavelength, depth + 1) / iterations;
                     }
                 }
             }

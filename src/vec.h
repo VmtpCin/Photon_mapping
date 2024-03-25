@@ -245,6 +245,40 @@ struct Color {
 
         return (380 + (h / 360.0) * (750 - 380)) * 1e-3;
     }
+
+    void set_by_wavelength(double wavelength) {
+        constexpr double gamma = 0.8;
+        double factor, intensity;
+
+        if (380 <= wavelength && wavelength < 440)
+            *this = {-(wavelength - 440) / (440 - 380), 0, 1};
+        else if (440 <= wavelength && wavelength < 490)
+            *this = {0, (wavelength - 440) / (490 - 440), 1};
+        else if (490 <= wavelength && wavelength < 510)
+            *this = {0, 1, -(wavelength - 510) / (510 - 490)};
+        else if (510 <= wavelength && wavelength < 580)
+            *this = {(wavelength - 510) / (580 - 510), 1, 0};
+        else if (580 <= wavelength && wavelength < 645)
+            *this = {1, -(wavelength - 645) / (645 - 580), 0};
+        else if (645 <= wavelength && wavelength <= 780)
+            *this = {1, 0, 0};
+        else
+            *this = {0, 0, 0}; // Wavelength is outside the visible range.
+
+        // Adjust brightness for wavelengths outside the optimal range.
+        if (wavelength > 780 || wavelength < 380)
+            factor = 0;
+        else if (wavelength < 420)
+            factor = 0.3 + 0.7 * (wavelength - 380) / (420 - 380);
+        else if (wavelength < 701)
+            factor = 1;
+        else
+            factor = 0.3 + 0.7 * (780 - wavelength) / (780 - 700);
+
+        // Apply gamma correction and scaling to RGB values.
+        intensity = pow(factor, gamma);
+        *this *= intensity;
+    }
 };
 
 inline Point3 operator+(const Vec3& v, const Point3 &p) {
@@ -262,23 +296,3 @@ inline Color operator*(const double &d, const Color &c) {
 extern Point3 interpolate(const Point3 &p1, const Point3 &p2, const Point3 &p3, double s, double t);
 extern Point3 interpolate(const Point3 &p1, const Point3 &p2, double s);
 
-Color to_color(double wavelength) {
-    Color ans;
-    constexpr double gama = 0.8;
-    double factor, intensity;
-
-    if (380 <= wavelength && wavelength < 440)
-        ans = {-(wavelength - 440) / (440 - 380), 0, 1};
-    else if (440 <= wavelength && wavelength < 490)
-        ans = {0, (wavelength - 440) / (490 - 440), 1};
-    else if (490 <= wavelength && wavelength < 510)
-        ans = {0, 1, -(wavelength - 510) / (510 - 490)};
-    else if (510 <= wavelength && wavelength < 580)
-        ans = {(wavelength - 510) / (580 - 510), 1, 0};
-    else if (580 <= wavelength && wavelength < 645)
-        ans = {1, -(wavelength - 645)/(645 - 580), 0};
-    else
-        ans = {0, 0, 0};
-    
-    return ans;
-}

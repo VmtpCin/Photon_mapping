@@ -92,7 +92,7 @@ void russian_rolette(const Line &l, Color intensity, std::vector<const Object*> 
                 Rand r1(0, 2.99);
                 Rand r2(0, 1);
 
-                constexpr int iterations = 1;
+                constexpr int iterations = 10;
                 for (int i = 0; i < iterations; ++i) {
                     int c1, c2;
 

@@ -41,9 +41,9 @@ int main() {
     objects.push_back(new Object(new Parallelogram({0, -1, -1}, {4, -1, -1}, {0, -1,  1}), opaco)); // down
     objects.push_back(new Object(new Parallelogram({0,  1, -1}, {4,  1, -1}, {0,  1,  1}), opaco)); // up
 
-    // objects.push_back(new Object(new Sphere({3, -0.6,  0.5}, 0.4), reflx));
+    objects.push_back(new Object(new Sphere({3, -0.6,  0.5}, 0.4), reflx));
     objects.push_back(new Object(new Sphere({1.5, -0.6, -0.5}, 0.4), trans, n_glass));
-    objects.push_back(new Object(new Sphere({1.5, -0.6, -0.5}, 0.38), trans, n_air));
+    // objects.push_back(new Object(new Sphere({1.5, -0.6, -0.5}, 0.38), trans, n_air));
 
 
     // objects.push_back(new Object(new Sphere({2, 0, 0}, 0.4), trans, 3));
@@ -58,15 +58,15 @@ int main() {
     const Camera cam({-1, 0, 0}, {1, 0, 0}, {0, 1, 0}, 1000, 1000);
 
     // KDTree kdt = emit_photons_th({2, 0, 0}, 1e6, 30, objects, 12);
-    KDTree kdt = emit_photons_th({2, 0, 0}, 1e6, 30, objects, 12);
+    KDTree kdt = emit_photons_th({2, 0, 0}, 1e6, 10, objects, 12);
     kdt.sort();
 
     // simplecast(cam, objects);
 
-    // starfield_projection(cam, kdt);
+    starfield_projection(cam, kdt);
     // visualize_radiance(cam, objects, kdt);
     // raycast(cam, objects, kdt);
-    raycast_th(cam, objects, kdt, 12);
+    // raycast_th(cam, objects, kdt, 12);
 
     cam.print();
 
