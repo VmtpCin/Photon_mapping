@@ -5,8 +5,8 @@
 #include <atomic>
 #include <thread>
 
-void russian_rolette(const Line &l, Color intensity, std::vector<const Object*> &ir,
-                     const std::vector<const Object*> &objs, KDTree &kdt, int depth) {
+void russian_rolette(bool refraction, const Line &l, Color intensity, std::vector<const Object*> &ir,
+                     const std::vector<const Object*> &objs, KDTree &kdt, KDTree &kdt_refraction, int depth) {
     if (depth > 5 || !intensity.not_empty())
         return;
 
@@ -42,10 +42,10 @@ void russian_rolette(const Line &l, Color intensity, std::vector<const Object*> 
 
             kdt.push_back({p, obj, l.dir, new_intensity / 2});
 
-            russian_rolette(n_l, new_intensity / 2, ir, objs, kdt, depth + 1);
+            russian_rolette(refraction, n_l, new_intensity / 2, ir, objs, kdt, kdt_refraction, depth + 1);
         } else if (dice < obj->rr[0] + obj->rr[1]) { // reflexao
             Vec3 n_dir = l.dir - 2 * normal * (normal * l.dir) / normal.length_sq();
-            russian_rolette({p, n_dir}, new_intensity, ir, objs, kdt, depth + 1);
+            russian_rolette(refraction, {p, n_dir}, new_intensity, ir, objs, kdt, kdt_refraction, depth + 1);
         } else if (dice < obj->rr[0] + obj->rr[1] + obj->rr[2]) { // refracao
             Color white = std::min({intensity.R, intensity.G, intensity.B});
             Color dominant = intensity - white;
@@ -78,13 +78,13 @@ void russian_rolette(const Line &l, Color intensity, std::vector<const Object*> 
                     else ir.pop_back();
 
                     Vec3 n_dir = eta * l.dir - (sqrt(temp) - cosI * eta) * n;
-                    russian_rolette({p, n_dir}, dominant, ir, objs, kdt, depth + 1);
+                    russian_rolette(true, {p, n_dir}, dominant, ir, objs, kdt, kdt_refraction, depth + 1);
 
                     if (getting_in) ir.pop_back();
                     else ir.push_back(obj);
                 } else {
                     Vec3 n_dir = l.dir - 2 * n * (n * l.dir);
-                    russian_rolette({p, n_dir}, dominant, ir, objs, kdt, depth + 1);
+                    russian_rolette(refraction, {p, n_dir}, dominant, ir, objs, kdt, kdt_refraction, depth + 1);
                 }
             }
 
@@ -118,49 +118,51 @@ void russian_rolette(const Line &l, Color intensity, std::vector<const Object*> 
                         else ir.pop_back();
 
                         Vec3 n_dir = eta * l.dir - (sqrt(temp) - cosI * eta) * n;
-                        russian_rolette({p, n_dir}, 2 * c / iterations, ir, objs, kdt, depth + 1);
+                        russian_rolette(true, {p, n_dir}, 2 * c / iterations, ir, objs, kdt, kdt_refraction, depth + 1);
 
                         if (getting_in) ir.pop_back();
                         else ir.push_back(obj);
                     } else {
                         Vec3 n_dir = l.dir - 2 * n * (n * l.dir);
-                        russian_rolette({p, n_dir}, 2 * c / iterations, ir, objs, kdt, depth + 1);
+                        russian_rolette(refraction, {p, n_dir}, 2 * c / iterations, ir, objs, kdt, kdt_refraction, depth + 1);
                     }
                 }
             }
         } else { // absorcao
-            kdt.push_back({p, obj, l.dir, new_intensity});
+            if (!refraction)  kdt.push_back({p, obj, l.dir, new_intensity});
+            else   kdt_refraction.push_back({p, obj, l.dir, new_intensity});
         }
     }
 }
 
-KDTree emit_photons(const Point3 &p, int num, double power, const std::vector<const Object*> &objs) {
-    KDTree kdt;
+std::pair<KDTree, KDTree> emit_photons(const std::vector<Light> &lights, const std::vector<const Object*> &objs) {
+    KDTree kdt, kdt_refraction;
 
-    Line l;
-    l.origin = p;
-    Rand r(-1, 1);
-    Color intensity = power / num;
-    std::vector<const Object*> ir;
+    for (const auto& light : lights) {
+        Line l;
+        l.origin = light.pos;
+        Rand r(-1, 1);
+        Light new_light = {light.pos, light.Intensity / light.quantity, light.quantity};
+        std::vector<const Object*> ir;
 
-    double rr[3] = {0, 0, 0};
-    constexpr auto n_air = [](double wavelength) { return 1.0; };
+        double rr[3] = {0, 0, 0};
+        constexpr auto n_air = [](double wavelength) { return 1.0; };
 
-    ir.push_back(new Object(nullptr, rr, n_air));
+        ir.push_back(new Object(nullptr, rr, n_air));
 
-    for (int i = 0; i < num; ++i) {
-        do
-            l.dir = {r.gen(), r.gen(), r.gen()};
-        while (l.dir.length_sq() > 1);
+        for (int i = 0; i < light.quantity; ++i) {
+            do
+                l.dir = {r.gen(), r.gen(), r.gen()};
+            while (l.dir.length_sq() > 1);
 
-        l.dir = l.dir.normalize();
+            l.dir = l.dir.normalize();
 
-        russian_rolette(l, intensity, ir, objs, kdt, 0);
+            russian_rolette(false, l, new_light.Intensity, ir, objs, kdt, kdt_refraction, 0);
+        }
+
+        delete ir[0];
     }
-
-    delete ir[0];
-
-    return kdt;
+    return {kdt, kdt_refraction};
 }
 
 
@@ -203,10 +205,11 @@ void visualize_radiance(const Camera &cam, const std::vector<const Object*> &obj
 
 std::atomic_int32_t th_cnt;
 std::vector<KDTree> th_kdts;
+std::vector<KDTree> th_kdts_refraction;
 
-void emit_photons_th_aux(const Point3 &p, int num, Color intensity, const std::vector<const Object*> &objs, int idx) {
+void emit_photons_th_aux(const Light &light, const std::vector<const Object*> &objs, int idx) {
     Line l;
-    l.origin = p;
+    l.origin = light.pos;
     Rand r(-1, 1);
     std::vector<const Object*> ir;
 
@@ -216,41 +219,49 @@ void emit_photons_th_aux(const Point3 &p, int num, Color intensity, const std::v
     ir.push_back(new Object(nullptr, rr, n_air));
 
 
-    while (th_cnt.fetch_add(1, std::memory_order_acq_rel) < num) {
+    while (th_cnt.fetch_add(1, std::memory_order_acq_rel) < light.quantity) {
         do
             l.dir = {r.gen(), r.gen(), r.gen()};
         while (l.dir.length_sq() > 1);
 
         l.dir = l.dir.normalize();
 
-        russian_rolette(l, intensity, ir, objs, th_kdts[idx], 0);
+        russian_rolette(false, l, light.Intensity, ir, objs, th_kdts[idx], th_kdts_refraction[idx], 0);
     }
 
     delete ir[0];
 }
 
-KDTree emit_photons_th(const Point3 &p, int num, double power, const std::vector<const Object*> &objs, int threads) {
-    KDTree kdt;
+std::pair<KDTree, KDTree> emit_photons_th(const std::vector<Light> &lights, const std::vector<const Object*> &objs, int threads) {
+    KDTree kdt, kdt_refraction;
     std::thread th[threads - 1];
-    Color intensity = power / num;
 
     th_kdts.assign(threads, KDTree());
-    th_cnt.store(0, std::memory_order_release);
+    th_kdts_refraction.assign(threads, KDTree());
 
-    for (int i = 0; i < threads - 1; ++i)
-        th[i] = std::thread(emit_photons_th_aux, p, num, intensity, objs, i);
+    for (const auto &light : lights) {
+        Light new_light = {light.pos, light.Intensity / light.quantity, light.quantity};
+        th_cnt.store(0, std::memory_order_release);
 
-    emit_photons_th_aux(p, num, intensity, objs, threads - 1);
+        for (int i = 0; i < threads - 1; ++i)
+            th[i] = std::thread(emit_photons_th_aux, new_light, objs, i);
 
-    for (auto &t : th)
-        t.join();
+        emit_photons_th_aux(new_light, objs, threads - 1);
+
+        for (auto &t : th)
+            t.join();
+    }
 
     for (int i = 0; i < threads; ++i) {
         kdt.insert(kdt.end(), th_kdts[i].begin(), th_kdts[i].end());
         th_kdts[i].clear();
+
+        kdt_refraction.insert(kdt_refraction.end(), th_kdts_refraction[i].begin(), th_kdts_refraction[i].end());
+        th_kdts_refraction[i].clear();
     }
 
     th_kdts.clear();
+    th_kdts_refraction.clear();
 
-    return kdt;
+    return {kdt, kdt_refraction};
 }

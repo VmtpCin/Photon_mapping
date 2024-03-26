@@ -74,13 +74,13 @@ struct Camera {
 };
 
 extern void simplecast(const Camera &cam, const std::vector<const Object*> &objs);
-extern KDTree emit_photons(const Point3 &p, int num, double power,
-                           const std::vector<const Object*> &objs);
-extern KDTree emit_photons_th(const Point3 &p, int num, double power,
-                              const std::vector<const Object*> &objs, int threads);
+extern std::pair<KDTree, KDTree> emit_photons(const std::vector<Light> &lights,
+                                              const std::vector<const Object*> &objs);
+extern std::pair<KDTree, KDTree> emit_photons_th(const std::vector<Light> &lights,
+                                                 const std::vector<const Object*> &objs, int threads);
 
 extern void starfield_projection(const Camera &cam, const KDTree &kdt);
 extern void visualize_radiance(const Camera &cam, const std::vector<const Object*> &objs, const KDTree &kdt);
 
-extern void raycast(const Camera &cam, const std::vector<const Object*> &objs, const KDTree &kdt);
-extern void raycast_th(const Camera &cam, const std::vector<const Object*> &objs, const KDTree &kdt, int threads);
+extern void raycast(const Camera &cam, const std::vector<const Object*> &objs, const std::vector<Light> &lights, const KDTree &kdt, const KDTree &kdt_refraction);
+extern void raycast_th(const Camera &cam, const std::vector<const Object*> &objs, const std::vector<Light> &lights, const KDTree &kdt, const KDTree &kdt_refraction, int threads);

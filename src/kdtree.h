@@ -13,6 +13,12 @@ struct Photon {
     Color I;
 };
 
+struct Light {
+    Point3 pos;
+    Color Intensity;
+    int quantity;
+};
+
 struct KDTree : std::vector<Photon> {
 private:
     template <int depth>
