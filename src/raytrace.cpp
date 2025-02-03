@@ -29,7 +29,7 @@ void simplecast(const Camera &cam, const std::vector<const Object*> &objs) {
 }
 
 Color castray(const Line &l, const std::vector<const Object*> &objs, const std::vector<Light> &lights, const KDTree &kdt,
-              const KDTree &kdt_refraction, std::vector<const Object*> &ir, double wavelength = 0, int depth = 0) {
+                  const KDTree &kdt_refraction, std::vector<const Object*> &ir, int depth = 0) {
     if (depth > 5)
         return 0;
 
@@ -47,32 +47,10 @@ Color castray(const Line &l, const std::vector<const Object*> &objs, const std::
         Point3 p = l.t(inter.t);
         Vec3 &normal = inter.normal;
 
-        for (const auto &light : lights) {
-            const Line l_l = {p, light.pos - p};
-
-            for (const auto &o : objs) {
-                auto temp = o->intersect(l);
-                if (temp < inter)
-                    inter = temp, obj = o;
-            }
-
-            if ((!inter || inter > 1) && (obj->rr[0] || obj->rr[1])) {
-                Color c = light.Intensity / (M_PI * l_l.dir.length_sq());
-
-                if (obj->rr[0])
-                    result += c * obj->rr[0] * (l_l.dir.normalize() * normal);
-
-                // if (obj->rr[1]) {
-                //     Vec3 n_dir = l.dir - 2 * normal * (normal * l.dir);
-                //     result += c * obj->rr[1] * (l_l.dir.normalize() * n_dir);
-                // }
-            }
-        }
-
         // reflexão
         if (obj->rr[1] > 0) {
             Vec3 n_dir = l.dir - 2 * normal * (normal * l.dir) / normal.length_sq();
-            result += obj->rr[1] * castray({p, n_dir}, objs, lights, kdt, kdt_refraction, ir, wavelength, depth + 1);
+            result += obj->rr[1] * castray({p, n_dir}, objs, lights, kdt, kdt_refraction, ir, depth + 1);
         }
 
         // refração
@@ -89,63 +67,33 @@ Color castray(const Line &l, const std::vector<const Object*> &objs, const std::
                 getting_in = true;
             }
 
-            if (wavelength) {
-                double eta;
-                if (getting_in)
-                    eta = ir.back()->ir(wavelength)/obj->ir(wavelength);
-                else
-                    eta = obj->ir(wavelength)/ir[ir.size() - 2]->ir(wavelength);
+            double eta;
+            if (getting_in)
+                eta = ir.back()->ir(380)/obj->ir(380);
+            else
+                eta = obj->ir(380)/ir[ir.size() - 2]->ir(380);
 
+            double temp = 1 - (eta * eta) * (1 - cosI * cosI);
 
-                double temp = 1 - (eta * eta) * (1 - cosI * cosI);
+            if (temp > 0) {
+                if (getting_in) ir.push_back(obj);
+                else ir.pop_back();
 
-                if (temp > 0) {
-                    if (getting_in) ir.push_back(obj);
-                    else ir.pop_back();
+                Vec3 n_dir = eta * l.dir - (sqrt(temp) - cosI * eta) * n;
+                result += obj->rr[2] * castray({p, n_dir}, objs, lights, kdt, kdt_refraction, ir, depth + 1);
 
-                    Vec3 n_dir = eta * l.dir - (sqrt(temp) - cosI * eta) * n;
-                    result += obj->rr[2] * castray({p, n_dir}, objs, lights, kdt, kdt_refraction, ir, wavelength, depth + 1);
-
-                    if (getting_in) ir.pop_back();
-                    else ir.push_back(obj);
-                } else {
-                    Vec3 n_dir = l.dir - 2 * n * (n * l.dir);
-                    result += obj->rr[2] * castray({p, n_dir}, objs, lights, kdt, kdt_refraction, ir, wavelength, depth + 1);
-                }
+                if (getting_in) ir.pop_back();
+                else ir.push_back(obj);
             } else {
-                constexpr int iterations = 2;
-                for (int i = 0; i < iterations; ++i) {
-                    double eta;
-                    double wl = iterations == 1 ? 565 : 380 + 370 * i / (iterations - 1);
-
-                    if (getting_in)
-                        eta = ir.back()->ir(wl)/obj->ir(wl);
-                    else
-                        eta = obj->ir(wl)/ir[ir.size() - 2]->ir(wl);
-
-                    double temp = 1 - (eta * eta) * (1 - cosI * cosI);
-
-                    if (temp > 0) {
-                        if (getting_in) ir.push_back(obj);
-                        else ir.pop_back();
-
-                        Vec3 n_dir = eta * l.dir - (sqrt(temp) - cosI * eta) * n;
-                        result += obj->rr[2] * castray({p, n_dir}, objs, lights, kdt, kdt_refraction, ir, wl, depth + 1) / iterations;
-
-                        if (getting_in) ir.pop_back();
-                        else ir.push_back(obj);
-                    } else {
-                        Vec3 n_dir = l.dir - 2 * n * (n * l.dir);
-                        result += obj->rr[2] * castray({p, n_dir}, objs, lights, kdt, kdt_refraction, ir, wavelength, depth + 1) / iterations;
-                    }
-                }
+                Vec3 n_dir = l.dir - 2 * n * (n * l.dir);
+                result += obj->rr[2] * castray({p, n_dir}, objs, lights, kdt, kdt_refraction, ir, depth + 1);
             }
         }
 
         // difusão
         if (obj->rr[1] + obj->rr[2] < 1)
             result += (1 - (obj->rr[1] + obj->rr[2]))
-                    * (              kdt.get_intensity(l.t(inter.t), obj, inter.normal.normalize(), 0.15)
+                    * (              kdt.get_intensity(l.t(inter.t), obj, inter.normal.normalize(), 0.2)
                         + kdt_refraction.get_intensity(l.t(inter.t), obj, inter.normal.normalize(), 0.04));
     }
 

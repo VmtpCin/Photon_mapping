@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <vector>
 
-constexpr double k_kdtree = 1;
+constexpr float k_kdtree = 2;
 
 struct Photon {
     Point3 point;
@@ -74,12 +74,12 @@ private:
         const Point3 &cur_p = (*this)[m].point;
 
         if (p.distance_sq(cur_p) <= r_sq) {
-            const double d = -(n * ((*this)[m].dir));
-            if ((*this)[m].obj == obj && d > 0)  
+            const float d = -(n * ((*this)[m].dir));
+            if ((*this)[m].obj == obj && d > 0)
                 intensity += (*this)[m].I * d * (1 - sqrt(p.distance_sq(cur_p)/(k_kdtree * r_sq)));
         }
 
-        const double dist = p[depth] - cur_p[depth];
+        const float dist = p[depth] - cur_p[depth];
 
         if (dist < 0) {
             intensity += get_intensity<(depth + 1) % 3>(p, obj, n, r_sq, b, m);

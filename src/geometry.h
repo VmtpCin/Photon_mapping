@@ -28,7 +28,7 @@ struct Object : Geometry {
     Geometry *geometry;
     double rr[3] = {0, 0, 0};
     double (*ir)(double);
-    Color color = 1;
+    Color color = 1.0;
 
     // ~Object() { if (geometry) delete geometry; }
 

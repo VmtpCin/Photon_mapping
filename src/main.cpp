@@ -4,6 +4,7 @@
 #include "vec.h"
 #include "geometry.h"
 #include "surface.h"
+#include "reader.h"
 using namespace std;
 
 #ifdef MY_PATH
@@ -12,7 +13,7 @@ const std::string path = MY_PATH;
 const std::string path = "out.ppm";
 #endif
 
-int main() {
+int main(int argc, char *argv[]) {
     clock_t start_time = clock();
 
     vector<const Object*> objects;
@@ -35,39 +36,39 @@ int main() {
         return 1.0;
     };
 
-    objects.push_back(new Object(new Parallelogram({0, -1, -1}, {4, -1, -1}, {0,  1, -1}), opaco, {1, 0, 0})); // right
-    objects.push_back(new Object(new Parallelogram({0, -1,  1}, {0,  1,  1}, {4, -1,  1}), opaco, {0, 1, 0})); // left
-    objects.push_back(new Object(new Parallelogram({4, -1, -1}, {4, -1,  1}, {4,  1, -1}), opaco, {0.3, 0.3, 1})); // back
-    objects.push_back(new Object(new Parallelogram({0, -1, -1}, {4, -1, -1}, {0, -1,  1}), opaco)); // down
-    objects.push_back(new Object(new Parallelogram({0,  1, -1}, {4,  1, -1}, {0,  1,  1}), opaco)); // up
+    //objects.push_back(new Object(new Parallelogram({v1x, v1y, v1z}, {v2x, v2y, v2z}, {v3x,  v3y, v3z}), tipo do objeto, cor rgb)); // right
+    objects.push_back(new Object(new Parallelogram({0, -1, -1}, {4, -1, -1}, {0,  1, -1}), opaco, Color(Color3(1, 0, 0)))); // right
+    objects.push_back(new Object(new Parallelogram({0, -1,  1}, {0,  1,  1}, {4, -1,  1}), opaco, Color(Color3(0, 1, 0)))); // left
+    objects.push_back(new Object(new Parallelogram({4, -1, -1}, {4, -1,  1}, {4,  1, -1}), opaco, Color(Color3(0.3, 0.3, 1)))); // back
+    objects.push_back(new Object(new Parallelogram({0, -1, -1}, {4, -1, -1}, {0, -1,  1}), opaco, Color(Color3(1, 1, 1)))); // down
+    objects.push_back(new Object(new Parallelogram({0,  1, -1}, {4,  1, -1}, {0,  1,  1}), opaco, Color(Color3(1, 1, 1)))); // up
 
-    objects.push_back(new Object(new Sphere({3, -0.6,  0.5}, 0.4), reflx));
-    objects.push_back(new Object(new Sphere({1.5, -0.3, -0.5}, 0.4), trans, n_glass));
-    objects.push_back(new Object(new Sphere({1.5, -0.3, -0.5}, 0.38), trans, n_air));
+    // objects.push_back(new Object(new Sphere({3, -0.6,  0.5}, 0.4), reflx));
+    // objects.push_back(new Object(new Sphere({1.5, -0.3, -0.5}, 0.4), trans, n_glass));
+    // objects.push_back(new Object(new Sphere({1.5, -0.3, -0.5}, 0.38), trans, n_air));
 
 
     // objects.push_back(new Object(new Sphere({2, 0, 0}, 0.4), trans, 3));
 
-    // std::vector<std::vector<Point3>> bezier_control;
-    // bezier_control.push_back(std::vector<Point3>({{1.5, -1, -1}, {2, 0.5, -1}, {2.5, -1, -1}, {3, 1, -1}}));
-    // bezier_control.push_back(std::vector<Point3>({{1.5, -1,  1}, {2, 0.5,  1}, {2.5, -1,  1}, {3, 1, 1}}));
-    // create_bezier_superfice(bezier_control, 100, 1, objects);
-    // objects.push_back(new Object(new Sphere({2, 0.3, 0}, 0.2), opaco, {1, 1, 0}));
-    // objects.push_back(new Object(new Sphere({3.4, -0.6, 0}, 0.4), opaco, {1, 0, 1}));
+
+    std::vector<std::vector<Point3>> bezier_control;
+    bezier_control.push_back(std::vector<Point3>({{1.5, -1, -1}, {2, 0.5, -1}, {2.5, -1, -1}, {3, 1, -1}}));
+    bezier_control.push_back(std::vector<Point3>({{1.5, -1,  1}, {2, 0.5,  1}, {2.5, -1,  1}, {3, 1, 1}}));
+    create_bezier_superfice(bezier_control, 100, 1, objects);
 
 
     std::vector<Light> lights;
-    lights.push_back({{2, 0.3, 0}, 30, int(1e6)});
+    lights.push_back({{2, 0.3, 0}, 10, int(1e5)});
 
-    const Camera cam({-1, 0, 0}, {1, 0, 0}, {0, 1, 0}, 1000, 1000);
+    const Camera cam({-1, 0, 0}, {1, 0, 0}, {0, 1, 0}, 500, 500);
 
-    auto [kdt, kdt_refraction] = emit_photons_th(lights, objects, 12);
+    auto [kdt, kdt_refraction] = emit_photons(lights, objects);
     kdt.sort();
     kdt_refraction.sort();
 
     // simplecast(cam, objects);
 
-    // starfield_projection(cam, kdt_refraction);
+    // starfield_projection(cam, kdt);
     // visualize_radiance(cam, objects, kdt);
     // raycast(cam, objects, lights, kdt, kdt_refraction);
     raycast_th(cam, objects, lights, kdt, kdt_refraction, 12);

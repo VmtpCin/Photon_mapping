@@ -5,7 +5,7 @@
 #include <atomic>
 #include <thread>
 
-void russian_rolette(bool refraction, const Line &l, Color intensity, std::vector<const Object*> &ir,
+void russian_rolette(bool refraction, const Line &l, const Color &intensity, std::vector<const Object*> &ir,
                      const std::vector<const Object*> &objs, KDTree &kdt, KDTree &kdt_refraction, int depth) {
     if (depth > 5 || !intensity.not_empty())
         return;
@@ -45,11 +45,8 @@ void russian_rolette(bool refraction, const Line &l, Color intensity, std::vecto
             russian_rolette(refraction, n_l, new_intensity / 2, ir, objs, kdt, kdt_refraction, depth + 1);
         } else if (dice < obj->rr[0] + obj->rr[1]) { // reflexao
             Vec3 n_dir = l.dir - 2 * normal * (normal * l.dir) / normal.length_sq();
-            russian_rolette(refraction, {p, n_dir}, new_intensity, ir, objs, kdt, kdt_refraction, depth + 1);
+            russian_rolette(true, {p, n_dir}, new_intensity, ir, objs, kdt, kdt_refraction, depth + 1);
         } else if (dice < obj->rr[0] + obj->rr[1] + obj->rr[2]) { // refracao
-            Color white = std::min({intensity.R, intensity.G, intensity.B});
-            Color dominant = intensity - white;
-
             Vec3 n = normal.normalize();
             double cosI = -l.dir * n;
             bool getting_in;
@@ -62,9 +59,14 @@ void russian_rolette(bool refraction, const Line &l, Color intensity, std::vecto
                 getting_in = true;
             }
 
-            if (dominant.not_empty()) {
-                double eta;
-                double wavelength = dominant.to_wavelength();
+            Color singular;
+
+            for (size_t i = 0; i < CN; ++i) {
+                if (intensity[i] <= 0) continue;
+
+                float eta;
+                float wavelength = Color3::get_wavelength(i);
+                singular[i] = intensity[i];
 
                 if (getting_in)
                     eta = ir.back()->ir(wavelength)/obj->ir(wavelength);
@@ -78,55 +80,16 @@ void russian_rolette(bool refraction, const Line &l, Color intensity, std::vecto
                     else ir.pop_back();
 
                     Vec3 n_dir = eta * l.dir - (sqrt(temp) - cosI * eta) * n;
-                    russian_rolette(true, {p, n_dir}, dominant, ir, objs, kdt, kdt_refraction, depth + 1);
+                    russian_rolette(true, {p, n_dir}, singular, ir, objs, kdt, kdt_refraction, depth + 1);
 
                     if (getting_in) ir.pop_back();
                     else ir.push_back(obj);
                 } else {
                     Vec3 n_dir = l.dir - 2 * n * (n * l.dir);
-                    russian_rolette(refraction, {p, n_dir}, dominant, ir, objs, kdt, kdt_refraction, depth + 1);
+                    russian_rolette(refraction, {p, n_dir}, singular, ir, objs, kdt, kdt_refraction, depth + 1);
                 }
-            }
 
-            if (white.not_empty()) {
-                Rand r1(0, 2.99);
-                Rand r2(0, 1);
-
-                constexpr int iterations = 10;
-                for (int i = 0; i < iterations; ++i) {
-                    int c1, c2;
-
-                    do
-                        c1 = r1.gen(), c2 = r1.gen();
-                    while (c1 == c2);
-
-                    Color c = {c1 == 0 ? white.R : 0, c1 == 1 ? white.G : 0, c1 == 2 ? white.B : 0};
-                    c += r2.gen() * Color({c2 == 0 ? white.R : 0, c2 == 1 ? white.G : 0, c2 == 2 ? white.B : 0});
-
-                    double eta;
-                    double wavelength = c.to_wavelength();
-
-                    if (getting_in)
-                        eta = ir.back()->ir(wavelength)/obj->ir(wavelength);
-                    else
-                        eta = obj->ir(wavelength)/ir[ir.size() - 2]->ir(wavelength);
-
-                    double temp = 1 - (eta * eta) * (1 - cosI * cosI);
-
-                    if (temp > 0) {
-                        if (getting_in) ir.push_back(obj);
-                        else ir.pop_back();
-
-                        Vec3 n_dir = eta * l.dir - (sqrt(temp) - cosI * eta) * n;
-                        russian_rolette(true, {p, n_dir}, 2 * c / iterations, ir, objs, kdt, kdt_refraction, depth + 1);
-
-                        if (getting_in) ir.pop_back();
-                        else ir.push_back(obj);
-                    } else {
-                        Vec3 n_dir = l.dir - 2 * n * (n * l.dir);
-                        russian_rolette(refraction, {p, n_dir}, 2 * c / iterations, ir, objs, kdt, kdt_refraction, depth + 1);
-                    }
-                }
+                singular[i] = 0;
             }
         } else { // absorcao
             if (!refraction)  kdt.push_back({p, obj, l.dir, new_intensity});

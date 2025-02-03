@@ -73,6 +73,21 @@ std::vector<Point3> create_bezier_superfice(const std::vector<std::vector<Point3
                                             int s_step, int t_step, std::vector<const Object*> &objs) {
     std::vector<Point3> prev_curve, curve;
 
+    constexpr auto n_water = [](double wavelength) {
+        return 1.1;
+    };
+
+    constexpr auto n_glass = [](double wavelength) {
+        double n = 5;
+        double wl_sq = wavelength * wavelength;
+
+        n += (2.03961212  * wl_sq) / (wl_sq - 600069867e-3);
+        n += (1.231792344 * wl_sq) / (wl_sq - 2.00179144e-2);
+        n += (2.01046945  * wl_sq) / (wl_sq - 1.03560653e2);
+
+        return n;
+    };
+
     for (int it_s; it_s <= s_step; ++it_s) {
         std::vector<Point3> next_it;
         double s = double(it_s) / s_step;
@@ -83,10 +98,10 @@ std::vector<Point3> create_bezier_superfice(const std::vector<std::vector<Point3
         for (int it_t = 0; it_t <= t_step; ++it_t)
             curve.push_back(bezier_curve(next_it, double(it_t) / t_step));
 
-        const double trans[3] = {0, 0.2, 0.8};
+        const double trans[3] = {0, 0, 1};
         for (int i = 0; i + 1 < prev_curve.size(); ++i) {
-            objs.push_back(new Object(new Triangle(prev_curve[i],          curve[i], curve[i + 1]), trans, 1.3));
-            objs.push_back(new Object(new Triangle(prev_curve[i], prev_curve[i + 1], curve[i + 1]), trans, 1.3));
+            objs.push_back(new Object(new Triangle(prev_curve[i],          curve[i], curve[i + 1]), trans, n_glass));
+            objs.push_back(new Object(new Triangle(prev_curve[i], prev_curve[i + 1], curve[i + 1]), trans, n_glass));
         }
 
         prev_curve.swap(curve);

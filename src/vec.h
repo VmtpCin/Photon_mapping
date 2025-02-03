@@ -1,8 +1,11 @@
 #pragma once
 #include <algorithm>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <math.h>
+
+constexpr size_t CN = 32;
 
 struct Vec3 {
     double e[3];
@@ -170,114 +173,200 @@ struct Line {
 };
 
 struct Color {
-    double R = 0, G = 0, B = 0;
+    float channels[CN];
 
-    Color() {}
-    Color(double d) { R = G = B = d; }
-    Color(double r, double g, double b) { R = r, G = g, B = b; }
+    float* begin() { return channels; }
+    const float* begin() const { return channels; }
+
+    float* end() { return channels + CN; }
+    const float* end() const { return channels + CN; }
+
+    Color(int i = 0) {
+        for (float &c : channels)
+            c = static_cast<float>(i);
+    }
+
+    Color(std::initializer_list<float> values) {
+        if (values.size() == 1) {
+            for (float &c : channels)
+                c = *values.begin();
+
+            return;
+        }
+
+        if (values.size() != CN)
+            throw std::invalid_argument("Number of arguments (" + std::to_string(values.size()) + 
+                                        ") must match the size of the Color (" + std::to_string(CN) + ").");
+
+        size_t i = 0;
+        for (const float &v : values)
+            channels[i++] = v;
+    }
+
+    explicit Color(const struct Color3& c);
+
+    float& operator[](size_t i)       { return channels[i]; }
+    float  operator[](size_t i) const { return channels[i]; }
 
     Color operator&(const Color &c) const {
-        return {R * c.R, G * c.G, B * c.B};
+        Color result;
+
+        std::transform(channels, channels + CN, c.channels, result.channels,
+                   [](float a, float b) { return a * b; });
+
+        return result;
     }
 
     Color operator+(const Color &c) const {
-        return {R + c.R, G + c.G, B + c.B};
+        Color result;
+
+        std::transform(channels, channels + CN, c.channels, result.channels,
+                   [](float a, float b) { return a + b; });
+
+        return result;
     }
 
     Color operator-(const Color &c) const {
-        return {R - c.R, G - c.G, B - c.B};
+        Color result;
+
+        std::transform(channels, channels + CN, c.channels, result.channels,
+                   [](float a, float b) { return a - b; });
+
+        return result;
     }
 
-    Color operator*(const double d) const {
-        return {R * d, G * d, B * d};
+    Color operator*(const float d) const {
+        Color result;
+
+        for (size_t i = 0; i < CN; ++i)
+            result[i] = (*this)[i] * d;
+
+        return result;
     }
 
     Color operator/(const double d) const {
-        return {R / d, G / d, B / d};
+        Color result;
+
+        for (size_t i = 0; i < CN; ++i)
+            result[i] = (*this)[i] / d;
+
+        return result;
     }
 
-    Color& operator&=(const Color &c) {
-        R *= c.R, G *= c.G, B *= c.B;
+    Color& operator&=(const Color& c) {
+        for (size_t i = 0; i < CN; ++i)
+            (*this)[i] *= c[i];
         return *this;
     }
 
     Color& operator+=(const Color &c) {
-        R += c.R, G += c.G, B += c.B;
+        for (size_t i = 0; i < CN; ++i)
+            (*this)[i] += c[i];
         return *this;
     }
 
     Color& operator*=(const double d) {
-        R *= d, G *= d, B * d;
+        for (float &c : channels)
+            c *= d;
         return *this;
     }
 
     Color& operator/=(const double d) {
-        R /= d, G /= d, B /= d;
+        for (float &c : channels)
+            c /= d;
         return *this;
     }
 
     bool not_empty() const {
-        return R > 1e-10 || G > 1e-10 || B > 1e-10;
+        for (const float &c : channels)
+            if (c > 1e-10)
+                return true;
+
+        return false;
+    }
+};
+
+struct Color3 {
+    float R = 0, G = 0, B = 0;
+
+    Color3(float r, float g, float b) : R(r), G(g), B(b) {}
+
+    Color3 (float wl) {
+        if (wl >= 380 && wl < 440) {
+            R = -(wl - 440) / (440 - 380);
+            G = 0.0;
+            B = 1.0;
+        } else if (wl >= 440 && wl < 490) {
+            R = 0.0;
+            G = (wl - 440) / (490 - 440);
+            B = 1.0;
+        } else if (wl >= 490 && wl < 510) {
+            R = 0.0;
+            G = 1.0;
+            B = -(wl - 510) / (510 - 490);
+        } else if (wl >= 510 && wl < 580) {
+            R = (wl - 510) / (580 - 510);
+            G = 1.0;
+            B = 0.0;
+        } else if (wl >= 580 && wl < 645) {
+            R = 1.0;
+            G = -(wl - 645) / (645 - 580);
+            B = 0.0;
+        } else if (wl >= 645 && wl <= 750) {
+            R = 1.0;
+            G = 0.0;
+            B = 0.0;
+        }
+
+        float factor = 1.0;
+        if (wl >= 380 && wl < 420)
+            factor = 0.3 + 0.7 * (wl - 380) / (420 - 380);
+        else if (wl >= 645 && wl <= 750)
+            factor = 0.3 + 0.7 * (750 - wl) / (750 - 645);
+
+        *this *= factor;
     }
 
-    double to_wavelength() const {
-        double cm = std::max({R, G, B});
-        double rd = R / cm;
-        double gd = G / cm;
-        double bd = B / cm;
+    explicit Color3(const Color &c) {
+        for (size_t i = 0; i < CN; ++i) {
+            if (c[i] <= 1e-5) continue;
 
-        double cmax = std::max({ rd, gd, bd });
-        double cmin = std::min({ rd, gd, bd });
-        double delta = cmax - cmin;
-        double h;
+            const float wl = get_wavelength(i);
+            *this += Color3(wl) * c[i];
+        }
 
-        if (delta == 0)
-            return 0;
-        else if (cmax == rd)
-            h = 60 * fmod(((gd - bd) / delta), 6);
-        else if (cmax == gd)
-            h = 60 * fmod(((bd - rd) / delta) + 2, 6);
-        else
-            h = 60 * fmod(((rd - gd) / delta) + 4, 6);
-
-        if (h < 0)
-            h += 360;
-
-        return (380 + (h / 360.0) * (750 - 380)) * 1e-3;
+        R /= 0.510f;
+        G /= 0.523f;
+        B /= 0.326f;
     }
 
-    void set_by_wavelength(double wavelength) {
-        constexpr double gamma = 0.8;
-        double factor, intensity;
+    static constexpr float get_wavelength(size_t idx) {
+        constexpr float minWavelength = 380.0;
+        constexpr float maxWavelength = 750.0;
+        if (idx >= CN)
+            throw std::out_of_range("Index out of range");
 
-        if (380 <= wavelength && wavelength < 440)
-            *this = {-(wavelength - 440) / (440 - 380), 0, 1};
-        else if (440 <= wavelength && wavelength < 490)
-            *this = {0, (wavelength - 440) / (490 - 440), 1};
-        else if (490 <= wavelength && wavelength < 510)
-            *this = {0, 1, -(wavelength - 510) / (510 - 490)};
-        else if (510 <= wavelength && wavelength < 580)
-            *this = {(wavelength - 510) / (580 - 510), 1, 0};
-        else if (580 <= wavelength && wavelength < 645)
-            *this = {1, -(wavelength - 645) / (645 - 580), 0};
-        else if (645 <= wavelength && wavelength <= 780)
-            *this = {1, 0, 0};
-        else
-            *this = {0, 0, 0}; // Wavelength is outside the visible range.
+        constexpr float segmentSize = (maxWavelength - minWavelength) / CN;
 
-        // Adjust brightness for wavelengths outside the optimal range.
-        if (wavelength > 780 || wavelength < 380)
-            factor = 0;
-        else if (wavelength < 420)
-            factor = 0.3 + 0.7 * (wavelength - 380) / (420 - 380);
-        else if (wavelength < 701)
-            factor = 1;
-        else
-            factor = 0.3 + 0.7 * (780 - wavelength) / (780 - 700);
+        return minWavelength + idx * segmentSize;
+    }
 
-        // Apply gamma correction and scaling to RGB values.
-        intensity = pow(factor, gamma);
-        *this *= intensity;
+    Color3 operator+(const Color3 &c) const {
+        return {R + c.R, G + c.G, B + c.B};
+    }
+
+    Color3 operator*(float f) const {
+        return {R * f, G * f, B * f};
+    }
+
+    Color3& operator+=(const Color3 &c) {
+        R += c.R, G += c.G, B += c.B;
+        return *this;
+    }
+
+    Color3& operator*=(float f) {
+        R *= f, G *= f, B *= f;
+        return *this;
     }
 };
 
