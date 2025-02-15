@@ -6,6 +6,7 @@
 #include <vector>
 #include <random>
 #include <string>
+#include <iostream>
 
 extern const std::string path;
 
@@ -59,12 +60,10 @@ struct Camera {
         std::ofstream outFile(path);
         outFile << "P3\n" << hres << " " << vres << "\n255\n";
 
-        // for (const auto &vs : grid)
-        //     for (const auto &v : vs)
-        //         max_v = std::max({max_v, v.R, v.G, v.B});
         for (int j = 0; j < vres; ++j)
             for (int i = 0; i < hres; ++i) {
                 Color3 c(grid[i][j]);
+
                 outFile << std::clamp(int(255 * c.R / max_v), 0, 255) << " "
                         << std::clamp(int(255 * c.G / max_v), 0, 255) << " "
                         << std::clamp(int(255 * c.B / max_v), 0, 255) << std::endl;

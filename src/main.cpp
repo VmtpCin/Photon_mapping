@@ -16,6 +16,8 @@ const std::string path = "out.ppm";
 int main(int argc, char *argv[]) {
     clock_t start_time = clock();
 
+    setupColor();
+
     vector<const Object*> objects;
     double trans[] = {0, 0, 1};
     double reflx[] = {0, 1, 0};
@@ -44,31 +46,30 @@ int main(int argc, char *argv[]) {
     objects.push_back(new Object(new Parallelogram({0,  1, -1}, {4,  1, -1}, {0,  1,  1}), opaco, Color(Color3(1, 1, 1)))); // up
 
     // objects.push_back(new Object(new Sphere({3, -0.6,  0.5}, 0.4), reflx));
-    // objects.push_back(new Object(new Sphere({1.5, -0.3, -0.5}, 0.4), trans, n_glass));
+    objects.push_back(new Object(new Sphere({2, -0.55, 0}, 0.4), trans, n_glass));
     // objects.push_back(new Object(new Sphere({1.5, -0.3, -0.5}, 0.38), trans, n_air));
 
 
     // objects.push_back(new Object(new Sphere({2, 0, 0}, 0.4), trans, 3));
 
 
-    std::vector<std::vector<Point3>> bezier_control;
-    bezier_control.push_back(std::vector<Point3>({{1.5, -1, -1}, {2, 0.5, -1}, {2.5, -1, -1}, {3, 1, -1}}));
-    bezier_control.push_back(std::vector<Point3>({{1.5, -1,  1}, {2, 0.5,  1}, {2.5, -1,  1}, {3, 1, 1}}));
-    create_bezier_superfice(bezier_control, 100, 1, objects);
-
+    // std::vector<std::vector<Point3>> bezier_control;
+    // bezier_control.push_back(std::vector<Point3>({{1.5, -1, -1}, {2, 0.5, -1}, {2.5, -1, -1}, {3, 1, -1}}));
+    // bezier_control.push_back(std::vector<Point3>({{1.5, -1,  1}, {2, 0.5,  1}, {2.5, -1,  1}, {3, 1, 1}}));
+    // create_bezier_superfice(bezier_control, 100, 1, objects);
 
     std::vector<Light> lights;
-    lights.push_back({{2, 0.3, 0}, 10, int(1e5)});
+    lights.push_back({{2, 0.3, 0}, 250 * Color(Color3(1, 1, 1)), int(1e5)});
 
     const Camera cam({-1, 0, 0}, {1, 0, 0}, {0, 1, 0}, 500, 500);
 
-    auto [kdt, kdt_refraction] = emit_photons(lights, objects);
+    auto [kdt, kdt_refraction] = emit_photons_th(lights, objects, 12);
     kdt.sort();
     kdt_refraction.sort();
 
     // simplecast(cam, objects);
 
-    // starfield_projection(cam, kdt);
+    // starfield_projection(cam, kdt_refraction);
     // visualize_radiance(cam, objects, kdt);
     // raycast(cam, objects, lights, kdt, kdt_refraction);
     raycast_th(cam, objects, lights, kdt, kdt_refraction, 12);
@@ -76,4 +77,6 @@ int main(int argc, char *argv[]) {
     cam.print();
 
     printf("It took %fs\n", (clock() - start_time)/1000.0);
+
+    return 0;
 }

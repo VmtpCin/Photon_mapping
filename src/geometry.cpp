@@ -10,10 +10,11 @@ Point3 interpolate(const Point3 &p1, const Point3 &p2, const Point3 &p3, double 
 }
 
 Intersection Plane::intersect(const Line &l) const {
+    constexpr double epsilon = 1e-5;
     const double a = normal * (origin - l.origin);
     const double b = normal * l.dir;
 
-    if (abs(b) < 1e-5 || ((a > 0) != (b > 0)))
+    if (abs(b) < epsilon || ((a > 0) != (b > 0)))
         return {inf, normal};
 
     const double t = a / b; 
@@ -43,11 +44,13 @@ Intersection Sphere::intersect(const Line &l) const {
 }
 
 Intersection Triangle::intersect(const Line &l) const {
+    constexpr double epsilon = 1e-5;
+
     const Vec3      oc  = origin - l.origin;
     const Vec3   normal =  edge1 ^ edge2;
     const double holder =  l.dir * normal;
 
-    if (abs(holder) < 1e-5)
+    if (abs(holder) < epsilon)
         return {inf, l.dir};
 
     const Vec3 vp = l.dir ^ oc;

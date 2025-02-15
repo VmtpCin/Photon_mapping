@@ -11,7 +11,7 @@ struct Intersection {
     double t = inf;
     Vec3 normal;
 
-    operator bool() const {
+    [[nodiscard]] operator bool() const {
         return t != inf;
     }
 
@@ -21,6 +21,8 @@ struct Intersection {
 };
 
 struct Geometry {
+    virtual ~Geometry() = default;
+
     virtual Intersection intersect(const Line &l) const { return {inf, l.dir}; };
 };
 
@@ -42,7 +44,8 @@ struct Object : Geometry {
     Object(Geometry *geo, const double t_rr[3], double (*t_ir)(double), Color c)
             : geometry(geo), rr{t_rr[0], t_rr[1], t_rr[2]}, ir(t_ir), color(c) {}
 
-    Intersection intersect(const Line &l) const override { return geometry->intersect(l); };
+
+    [[nodiscard]] Intersection intersect(const Line &l) const override { return geometry->intersect(l); };
 };
 
 struct Plane : Geometry {
@@ -51,7 +54,7 @@ struct Plane : Geometry {
 
     Plane(const Point3 &p, const Vec3 &v) : origin(p), normal(v) {}
 
-    Intersection intersect(const Line &l) const override;
+    [[nodiscard]] Intersection intersect(const Line &l) const override;
 };
 
 struct Sphere : Geometry {
@@ -60,7 +63,7 @@ struct Sphere : Geometry {
 
     Sphere(const Point3 &p, double r) : center(p), radius(r) {}
 
-    Intersection intersect(const Line &l) const override;
+    [[nodiscard]] Intersection intersect(const Line &l) const override;
 };
 
 struct Triangle : Geometry {
@@ -70,7 +73,7 @@ struct Triangle : Geometry {
     Triangle(const Point3 &p1, const Point3 &p2, const Point3 &p3)
             : origin(p1), edge1(p2 - p1), edge2(p3 - p1) { }
 
-    Intersection intersect(const Line &l) const override;
+    [[nodiscard]] Intersection intersect(const Line &l) const override;
 };
 
 struct Parallelogram : Geometry {
@@ -80,18 +83,18 @@ struct Parallelogram : Geometry {
     Parallelogram(const Point3 &p1, const Point3 &p2, const Point3 &p3)
                  : origin(p1), edge1(p2 - p1), edge2(p3 - p1) { }
 
-    Intersection intersect(const Line &l) const override;
+    [[nodiscard]] Intersection intersect(const Line &l) const override;
 };
 
 struct Bounding_Box : Geometry {
     const Point3 origin;
     const Vec3 diagonal;
 
-    Point3 generate_origin(const Point3 &p1, const Point3 &p2) const {
+    static Point3 generate_origin(const Point3 &p1, const Point3 &p2) {
         return {std::min(p1[0], p2[0]), std::min(p1[1], p2[1]), std::min(p1[2], p2[2])};
     }
 
-    Vec3 generate_diagonal(const Point3 &p1, const Point3 &p2) const {
+    static Vec3 generate_diagonal(const Point3 &p1, const Point3 &p2) {
         const Point3 p = {std::max(p1[0], p2[0]), std::max(p1[1], p2[1]), std::max(p1[2], p2[2])};
         return p - generate_origin(p1, p2);
     }
@@ -99,5 +102,5 @@ struct Bounding_Box : Geometry {
     Bounding_Box(const Point3 &p1, const Point3 &p2)
                 : origin(generate_origin(p1, p2)), diagonal(generate_diagonal(p1, p2)) { }
 
-    Intersection intersect(const Line &l) const override;
+    [[nodiscard]] Intersection intersect(const Line &l) const override;
 };

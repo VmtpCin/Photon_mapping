@@ -1,18 +1,53 @@
+#include "matrix.h"
 #include "vec.h"
 
-Color::Color(const Color3 &rgb) {
-    for (size_t i = 0; i < CN; ++i) {
-        float wl = Color3::get_wavelength(i);
-        const Color3 mappedRGB(wl);
+Matrix<float> Color::C;
 
-        (*this)[i] = rgb.R * mappedRGB.R + rgb.G * mappedRGB.G + rgb.B * mappedRGB.B;
+void setupColor() {
+    Matrix<float> M(3, CN);
+
+    for (size_t i = 0; i < CN; ++i) {
+        Color3 c(Color::get_wavelength(i));
+
+        M[0][i] = c.R;
+        M[1][i] = c.G;
+        M[2][i] = c.B;
     }
 
-    float sum = 0.0;
-    for (float value : (*this))
-        sum += value;
+    Matrix<float> M_t = M.transpose();
 
-    if (sum > 1e-5)
-        for (float& value : (*this))
-            value /= sum;
+    Color::C = M_t * (M * M_t).inverse();
+}
+
+Color::Color(const Color3 &rgb) {
+    constexpr auto calculate = [&](Matrix<float> m) {
+        Matrix<float> Color(3, 1);
+        for (size_t i = 0; i < CN; ++i) {
+            if (m[i][0] < 0) continue;
+            Color3 c(get_wavelength(i));
+    
+            Color[0][0] += m[i][0] * c.R;
+            Color[1][0] += m[i][0] * c.G;
+            Color[2][0] += m[i][0] * c.B;
+        }
+
+        return Color;
+    };
+
+    const Matrix<float> goal({{rgb.R}, {rgb.G}, {rgb.B}});    
+    Matrix<float> M = C * goal, newgoal;
+
+    size_t cnt = 0;
+    do {
+        newgoal = goal - calculate(M);
+        M += C * newgoal;
+
+        for (size_t i = 0; i < CN; ++ i)
+            if (M[i][0] < 0)
+                M[i][0] = 0;
+
+    } while (++cnt < 1e4 && newgoal.sumValuesAbsolute() >= 5e-3);
+
+    for (size_t i = 0; i < CN; ++i)
+        channels[i] = M[i][0];
 }

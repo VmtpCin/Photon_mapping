@@ -4,8 +4,9 @@
 #include <stdexcept>
 #include <string>
 #include <math.h>
+#include "matrix.h"
 
-constexpr size_t CN = 32;
+constexpr size_t CN = 128;
 
 struct Vec3 {
     double e[3];
@@ -175,6 +176,8 @@ struct Line {
 struct Color {
     float channels[CN];
 
+    static Matrix<float> C;
+
     float* begin() { return channels; }
     const float* begin() const { return channels; }
 
@@ -284,61 +287,6 @@ struct Color {
 
         return false;
     }
-};
-
-struct Color3 {
-    float R = 0, G = 0, B = 0;
-
-    Color3(float r, float g, float b) : R(r), G(g), B(b) {}
-
-    Color3 (float wl) {
-        if (wl >= 380 && wl < 440) {
-            R = -(wl - 440) / (440 - 380);
-            G = 0.0;
-            B = 1.0;
-        } else if (wl >= 440 && wl < 490) {
-            R = 0.0;
-            G = (wl - 440) / (490 - 440);
-            B = 1.0;
-        } else if (wl >= 490 && wl < 510) {
-            R = 0.0;
-            G = 1.0;
-            B = -(wl - 510) / (510 - 490);
-        } else if (wl >= 510 && wl < 580) {
-            R = (wl - 510) / (580 - 510);
-            G = 1.0;
-            B = 0.0;
-        } else if (wl >= 580 && wl < 645) {
-            R = 1.0;
-            G = -(wl - 645) / (645 - 580);
-            B = 0.0;
-        } else if (wl >= 645 && wl <= 750) {
-            R = 1.0;
-            G = 0.0;
-            B = 0.0;
-        }
-
-        float factor = 1.0;
-        if (wl >= 380 && wl < 420)
-            factor = 0.3 + 0.7 * (wl - 380) / (420 - 380);
-        else if (wl >= 645 && wl <= 750)
-            factor = 0.3 + 0.7 * (750 - wl) / (750 - 645);
-
-        *this *= factor;
-    }
-
-    explicit Color3(const Color &c) {
-        for (size_t i = 0; i < CN; ++i) {
-            if (c[i] <= 1e-5) continue;
-
-            const float wl = get_wavelength(i);
-            *this += Color3(wl) * c[i];
-        }
-
-        R /= 0.510f;
-        G /= 0.523f;
-        B /= 0.326f;
-    }
 
     static constexpr float get_wavelength(size_t idx) {
         constexpr float minWavelength = 380.0;
@@ -349,6 +297,59 @@ struct Color3 {
         constexpr float segmentSize = (maxWavelength - minWavelength) / CN;
 
         return minWavelength + idx * segmentSize;
+    }
+};
+
+struct Color3 {
+    float R, G, B;
+
+    Color3() : R(0), G(0), B(0) {}
+    Color3(float r, float g, float b) : R(r), G(g), B(b) {}
+
+    Color3 (float wl) {
+        if (wl >= 380 && wl < 410) {
+            R = 0.6 - 0.41 * (410 - wl)/30;
+            G = 0.0;
+            B = 0.39 + 0.6 * (410 - wl)/30;
+        } else if (wl >= 410 && wl < 440) {
+            R = 0.19 - 0.19 * (440 - wl)/30;
+            G = 0.0;
+            B = 1.0;
+        } else if (wl >= 440 && wl < 490) {
+            R = 0.0;
+            G = (wl - 440) / 50;
+            B = 1.0;
+        } else if (wl >= 490 && wl < 510) {
+            R = 0.0;
+            G = 1.0;
+            B = (510 - wl) / 20;
+        } else if (wl >= 510 && wl < 580) {
+            R = (wl - 510) / 70;
+            G = 1.0;
+            B = 0.0;
+        } else if (wl >= 580 && wl < 640) {
+            R = 1.0;
+            G = (640 - wl) / 60;
+            B = 0.0;
+        } else if (wl >= 640 && wl < 700) {
+            R = 1.0;
+            G = 0.0;
+            B = 0.0;
+        } else if (wl >= 700 && wl <= 780) {
+            R = 0.35 + 0.65 * (780 - wl) / 80;
+            G = 0.0;
+            B = 0.0;
+        }
+    }
+
+    explicit Color3(const Color &c) {
+        R = 0, G = 0, B = 0;
+        for (size_t i = 0; i < CN; ++i) {
+            if (c[i] <= 0) continue;
+
+            const float wl = Color::get_wavelength(i);
+            *this += Color3(wl) * c[i];
+        }
     }
 
     Color3 operator+(const Color3 &c) const {
@@ -385,3 +386,4 @@ inline Color operator*(const double &d, const Color &c) {
 extern Point3 interpolate(const Point3 &p1, const Point3 &p2, const Point3 &p3, double s, double t);
 extern Point3 interpolate(const Point3 &p1, const Point3 &p2, double s);
 
+extern void setupColor();

@@ -40,7 +40,8 @@ void russian_rolette(bool refraction, const Line &l, const Color &intensity, std
  
             Line n_l({p, n_dir});
 
-            kdt.push_back({p, obj, l.dir, new_intensity / 2});
+            if (!refraction)  kdt.push_back({p, obj, l.dir, new_intensity / 2});
+            else   kdt_refraction.push_back({p, obj, l.dir, new_intensity / 2});
 
             russian_rolette(refraction, n_l, new_intensity / 2, ir, objs, kdt, kdt_refraction, depth + 1);
         } else if (dice < obj->rr[0] + obj->rr[1]) { // reflexao
@@ -65,7 +66,7 @@ void russian_rolette(bool refraction, const Line &l, const Color &intensity, std
                 if (intensity[i] <= 0) continue;
 
                 float eta;
-                float wavelength = Color3::get_wavelength(i);
+                float wavelength = Color::get_wavelength(i);
                 singular[i] = intensity[i];
 
                 if (getting_in)
