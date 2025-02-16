@@ -109,7 +109,7 @@ public:
         std::cout << combined.size() << std::endl << size() << std::endl;
     }
 
-    void sort() { shrink_to_fit(); sort<0>(0, size()); combine_close_photons(1e-2); }
+    void sort() { shrink_to_fit(); sort<0>(0, size()); }
 
     KDTree find_all_near(const Point3 &p, const Object *obj, double radius) const {
         KDTree photons;

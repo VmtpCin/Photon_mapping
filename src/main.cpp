@@ -34,6 +34,17 @@ int main(int argc, char *argv[]) {
         return n;
     };
 
+    constexpr auto n_water = [](double wavelength) {
+        double n = 1.0;
+        double wl_sq = wavelength * wavelength;
+    
+        n += (0.5675888 * wl_sq) / (wl_sq - 0.050263605);
+        n += (0.1724913 * wl_sq) / (wl_sq - 0.0664945);
+        n += (0.0205836 * wl_sq) / (wl_sq - 0.1531933);
+    
+        return std::sqrt(n);
+    };
+
     constexpr auto n_air = [](double wavelength) {
         return 1.0;
     };
@@ -41,17 +52,11 @@ int main(int argc, char *argv[]) {
     //objects.push_back(new Object(new Parallelogram({v1x, v1y, v1z}, {v2x, v2y, v2z}, {v3x,  v3y, v3z}), tipo do objeto, cor rgb)); // right
     objects.push_back(new Object(new Parallelogram({0, -1, -1}, {4, -1, -1}, {0,  1, -1}), opaco, Color(Color3(1, 0, 0)))); // right
     objects.push_back(new Object(new Parallelogram({0, -1,  1}, {0,  1,  1}, {4, -1,  1}), opaco, Color(Color3(0, 1, 0)))); // left
-    objects.push_back(new Object(new Parallelogram({4, -1, -1}, {4, -1,  1}, {4,  1, -1}), opaco, Color(Color3(0.3, 0.3, 1)))); // back
+    objects.push_back(new Object(new Parallelogram({4, -1, -1}, {4, -1,  1}, {4,  1, -1}), opaco, Color(Color3(0, 0, 1)))); // back
     objects.push_back(new Object(new Parallelogram({0, -1, -1}, {4, -1, -1}, {0, -1,  1}), opaco, Color(Color3(1, 1, 1)))); // down
     objects.push_back(new Object(new Parallelogram({0,  1, -1}, {4,  1, -1}, {0,  1,  1}), opaco, Color(Color3(1, 1, 1)))); // up
 
-    // objects.push_back(new Object(new Sphere({3, -0.6,  0.5}, 0.4), reflx));
     objects.push_back(new Object(new Sphere({2, -0.55, 0}, 0.4), trans, n_glass));
-    // objects.push_back(new Object(new Sphere({1.5, -0.3, -0.5}, 0.38), trans, n_air));
-
-
-    // objects.push_back(new Object(new Sphere({2, 0, 0}, 0.4), trans, 3));
-
 
     // std::vector<std::vector<Point3>> bezier_control;
     // bezier_control.push_back(std::vector<Point3>({{1.5, -1, -1}, {2, 0.5, -1}, {2.5, -1, -1}, {3, 1, -1}}));

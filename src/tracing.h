@@ -56,19 +56,28 @@ struct Camera {
     }
 
     void print() const {
-        constexpr double max_v = 1;
+        constexpr double gamma = 2.2;
         std::ofstream outFile(path);
+        
+        if (!outFile.is_open()) {
+            std::cerr << "Error: Could not open file " << path << std::endl;
+            return;
+        }
+    
         outFile << "P3\n" << hres << " " << vres << "\n255\n";
-
-        for (int j = 0; j < vres; ++j)
+    
+        for (int j = 0; j < vres; ++j) {
             for (int i = 0; i < hres; ++i) {
                 Color3 c(grid[i][j]);
 
-                outFile << std::clamp(int(255 * c.R / max_v), 0, 255) << " "
-                        << std::clamp(int(255 * c.G / max_v), 0, 255) << " "
-                        << std::clamp(int(255 * c.B / max_v), 0, 255) << std::endl;
+                int r = std::clamp(int(255 * std::pow(c.R, 1.0 / gamma)), 0, 255);
+                int g = std::clamp(int(255 * std::pow(c.G, 1.0 / gamma)), 0, 255);
+                int b = std::clamp(int(255 * std::pow(c.B, 1.0 / gamma)), 0, 255);
+    
+                outFile << r << " " << g << " " << b << std::endl;
             }
-
+        }
+    
         outFile.close();
     }
 };

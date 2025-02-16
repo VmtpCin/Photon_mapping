@@ -29,7 +29,7 @@ void simplecast(const Camera &cam, const std::vector<const Object*> &objs) {
 }
 
 Color castray(const Line &l, const std::vector<const Object*> &objs, const std::vector<Light> &lights, const KDTree &kdt,
-                  const KDTree &kdt_refraction, std::vector<const Object*> &ir, int depth = 0) {
+                  const KDTree &kdt_refraction, std::vector<const Object*> &ir, float wl_idx = -1, int depth = 0) {
     if (depth > 5)
         return 0;
 
@@ -50,7 +50,7 @@ Color castray(const Line &l, const std::vector<const Object*> &objs, const std::
         // reflexão
         if (obj->rr[1] > 0) {
             Vec3 n_dir = l.dir - 2 * normal * (normal * l.dir) / normal.length_sq();
-            result += obj->rr[1] * castray({p, n_dir}, objs, lights, kdt, kdt_refraction, ir, depth + 1);
+            result += obj->rr[1] * castray({p, n_dir}, objs, lights, kdt, kdt_refraction, ir, wl_idx, depth + 1);
         }
 
         // refração
@@ -67,26 +67,32 @@ Color castray(const Line &l, const std::vector<const Object*> &objs, const std::
                 getting_in = true;
             }
 
-            double eta;
-            if (getting_in)
-                eta = ir.back()->ir(380)/obj->ir(380);
-            else
-                eta = obj->ir(380)/ir[ir.size() - 2]->ir(380);
+            for (size_t i = 0; i < CN; ++i) {
+                if (wl_idx != -1 && wl_idx != i) continue;
 
-            double temp = 1 - (eta * eta) * (1 - cosI * cosI);
+                float wl = Color::get_wavelength(i);
 
-            if (temp > 0) {
-                if (getting_in) ir.push_back(obj);
-                else ir.pop_back();
+                double eta;
+                if (getting_in)
+                    eta = ir.back()->ir(wl)/obj->ir(wl);
+                else
+                    eta = obj->ir(wl)/ir[ir.size() - 2]->ir(wl);
 
-                Vec3 n_dir = eta * l.dir - (sqrt(temp) - cosI * eta) * n;
-                result += obj->rr[2] * castray({p, n_dir}, objs, lights, kdt, kdt_refraction, ir, depth + 1);
+                double temp = 1 - (eta * eta) * (1 - cosI * cosI);
 
-                if (getting_in) ir.pop_back();
-                else ir.push_back(obj);
-            } else {
-                Vec3 n_dir = l.dir - 2 * n * (n * l.dir);
-                result += obj->rr[2] * castray({p, n_dir}, objs, lights, kdt, kdt_refraction, ir, depth + 1);
+                if (temp > 0) {
+                    if (getting_in) ir.push_back(obj);
+                    else ir.pop_back();
+
+                    Vec3 n_dir = eta * l.dir - (sqrt(temp) - cosI * eta) * n;
+                    result[i] += obj->rr[2] * castray({p, n_dir}, objs, lights, kdt, kdt_refraction, ir, i, depth + 1)[i];
+
+                    if (getting_in) ir.pop_back();
+                    else ir.push_back(obj);
+                } else {
+                    Vec3 n_dir = l.dir - 2 * n * (n * l.dir);
+                    result[i] += obj->rr[2] * castray({p, n_dir}, objs, lights, kdt, kdt_refraction, ir, i, depth + 1)[i];
+                }
             }
         }
 
